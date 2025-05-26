@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
   // Get the canvas element and its 2D rendering context
         const canvas = document.getElementById('gameCanvas');
         const context = canvas.getContext('2d');
@@ -91,4 +89,3 @@
             spriteX = (canvas.width / 2) - (DRAW_WIDTH / 2);
             spriteY = (canvas.height / 2) - (DRAW_HEIGHT / 2);
         });
->>>>>>> Stashed changes
