@@ -89,3 +89,8 @@
             spriteX = (canvas.width / 2) - (DRAW_WIDTH / 2);
             spriteY = (canvas.height / 2) - (DRAW_HEIGHT / 2);
         });
+
+
+
+
+        
