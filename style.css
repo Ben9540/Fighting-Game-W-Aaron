@@ -32,8 +32,8 @@
         }
 
         #title {
-            height: 50%;
-            width: 50%;
+            height: 55%;
+            width: 55%;
         }
 
         #mainMenu{
@@ -41,6 +41,22 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
+        }
+
+        #mainMenu button {
+            margin: 40px;
+            margin-bottom: 50px;
+            background-color: transparent;;
+            font-size: 45px;
+            color: orange;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        #mainMenu button:hover {
+            color: #61dafb; /* Change color on hover */
+            transform: scale(1.1); /* Slightly enlarge on hover */
         }
 
         #AChar{
