@@ -1,96 +1,144 @@
-  // Get the canvas element and its 2D rendering context
-        const canvas = document.getElementById('gameCanvas');
-        const context = canvas.getContext('2d');
+ 
+ document.getElementById('startButton').addEventListener('click', () => {
+    // Hide the start button and show the game canvas
+    document.getElementById('gameCanvas').style.display = 'flex';
+    document.getElementById('mainMenu').style.display = 'none';
+ });
+ 
+//Sprites
 
-        context.imageSmoothingEnabled = false;
-        context.mozImageSmoothingEnabled = false; // For Firefox compatibility
-        context.webkitImageSmoothingEnabled = false; // For Webkit browsers (Safari, older Chrome)
-        context.msImageSmoothingEnabled = false; // For Internet Explorer/Edge
+class GameSprite {
+    constructor(imageSrc, x, y, frameWidth, frameHeight, totalFrames, framesPerRow, animationSpeed, scale = 1) {
+        this.image = new Image();
+        this.image.src = imageSrc;
+        this.x = x;
+        this.y = y;
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+        this.totalFrames = totalFrames;
+        this.framesPerRow = framesPerRow;
+        this.animationSpeed = animationSpeed; // How many game loop frames before changing sprite frame
+        this.scale = scale; // How much to scale the sprite when drawing
 
-        // --- Sprite Configuration ---
-        const SPRITE_SHEET_URL = 'Tornado.png'; // <<< REPLACE THIS WITH YOUR ACTUAL SPRITE SHEET PATH
-        const SPRITE_WIDTH = 8;     // Width of a single sprite frame in pixels
-        const SPRITE_HEIGHT = 8;    // Height of a single sprite frame in pixels
-        const TOTAL_FRAMES = 7;     // Total number of animation frames in your sprite sheet
-        const FRAMES_PER_ROW = 3;   // How many sprite frames fit horizontally in one row (24px / 8px = 3)
+        this.currentFrame = 0;
+        this.frameCounter = 0; // Counter for animation speed
+        this.isLoaded = false; // To track if the image is loaded
 
-        // The size to draw the sprite on the canvas (scaled up for better visibility)
-        const DRAW_WIDTH = 64;
-        const DRAW_HEIGHT = 64;
-
-        // Animation speed: how many game loop frames before advancing to the next sprite frame
-        const ANIMATION_SPEED = 10; // Lower value = faster animation
-
-        // --- Game Variables ---
-        let spriteImage = new Image();
-        let currentFrame = 0;       // Current animation frame index (0 to TOTAL_FRAMES-1)
-        let frameCounter = 0;       // Counter to control animation speed
-        let spriteX = (canvas.width / 2) - (DRAW_WIDTH / 2);  // Center the sprite horizontally
-        let spriteY = (canvas.height / 2) - (DRAW_HEIGHT / 2); // Center the sprite vertically
-
-        // --- Load the Sprite Sheet Image ---
-        spriteImage.src = SPRITE_SHEET_URL;
-
-        spriteImage.onload = () => {
-            console.log("Sprite sheet loaded successfully!");
-            // Start the game loop once the image is loaded
-            gameLoop();
+        this.image.onload = () => {
+            this.isLoaded = true;
+            console.log(`Sprite loaded: ${imageSrc}`);
+            // You might want a global flag or Promise.all to ensure all sprites are loaded before starting the gameLoop
         };
-
-        spriteImage.onerror = () => {
-            console.error("Error loading sprite sheet. Please check the URL:", SPRITE_SHEET_URL);
-            // Optionally display an error message on the canvas
-            context.fillStyle = 'red';
-            context.font = '16px Arial';
-            context.fillText('Error loading sprite sheet!', 10, 30);
+        this.image.onerror = () => {
+            console.error(`Error loading sprite: ${imageSrc}`);
         };
+    }
 
-        // --- Game Loop Function ---
-        function gameLoop() {
-            // 1. Clear the entire canvas for the new frame
-            context.clearRect(0, 0, canvas.width, canvas.height);
+    // Method to update the sprite's animation frame
+    update() {
+        this.frameCounter++;
+        if (this.frameCounter >= this.animationSpeed) {
+            this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+            this.frameCounter = 0;
+        }
+        // You can add movement logic here too (e.g., this.x += this.vx;)
+    }
 
-            // 2. Update animation frame
-            frameCounter++;
-            if (frameCounter >= ANIMATION_SPEED) {
-                currentFrame = (currentFrame + 1) % TOTAL_FRAMES; // Loop through frames
-                frameCounter = 0; // Reset counter
-            }
-
-            // 3. Calculate source (sx, sy) coordinates on the sprite sheet
-            // Assuming frames are arranged left-to-right, top-to-bottom
-            const frameX = currentFrame % FRAMES_PER_ROW;
-            const frameY = Math.floor(currentFrame / FRAMES_PER_ROW);
-
-            const sx = frameX * SPRITE_WIDTH;
-            const sy = frameY * SPRITE_HEIGHT;
-
-            // 4. Draw the current sprite frame onto the canvas
-            // context.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
-            context.drawImage(
-                spriteImage,     // The image object (your sprite sheet)
-                sx,              // Source X: X coordinate to start clipping from the sprite sheet
-                sy,              // Source Y: Y coordinate to start clipping from the sprite sheet
-                SPRITE_WIDTH,    // Source Width: Width of the clipped portion from the sprite sheet
-                SPRITE_HEIGHT,   // Source Height: Height of the clipped portion from the sprite sheet
-                spriteX,         // Destination X: X coordinate on the canvas to draw the image
-                spriteY,         // Destination Y: Y coordinate on the canvas to draw the image
-                DRAW_WIDTH,      // Destination Width: Width to draw the image on the canvas (scaled)
-                DRAW_HEIGHT      // Destination Height: Height to draw the image on the canvas (scaled)
-            );
-
-            // 5. Request the next animation frame
-            requestAnimationFrame(gameLoop);
+    // Method to draw the sprite on the canvas
+    draw(context) {
+        if (!this.isLoaded) {
+            return; // Don't draw if the image hasn't loaded yet
         }
 
-        // Handle canvas resizing to maintain responsiveness
-        window.addEventListener('resize', () => {
-            // Recalculate sprite position to keep it centered
-            spriteX = (canvas.width / 2) - (DRAW_WIDTH / 2);
-            spriteY = (canvas.height / 2) - (DRAW_HEIGHT / 2);
-        });
+        const sx = (this.currentFrame % this.framesPerRow) * this.frameWidth;
+        const sy = Math.floor(this.currentFrame / this.framesPerRow) * this.frameHeight;
+
+        // Calculate drawing dimensions based on scale
+        const drawWidth = this.frameWidth * this.scale;
+        const drawHeight = this.frameHeight * this.scale;
+
+        context.drawImage(
+            this.image,
+            sx, sy, this.frameWidth, this.frameHeight, // Source clipping
+            this.x, this.y, drawWidth, drawHeight // Destination on canvas
+        );
+    }
+}
+
+// In your main JavaScript file (e.g., main.js)
+const canvas = document.getElementById('gameCanvas');
+const context = canvas.getContext('2d');
+
+context.imageSmoothingEnabled = false; // Always good for pixel art!
+context.mozImageSmoothingEnabled = false;
+context.webkitImageSmoothingEnabled = false;
+context.msImageSmoothingEnabled = false;
+
+// Array to hold all your active sprites
+const allGameSprites = [];
+
+// --- Instantiate your sprites ---
+
+// Your main character (e.g., the sword character)
+const swordCharacter = new GameSprite(
+    'path/to/your/sword_spritesheet.png', // Replace with your sword sprite sheet
+    50, 150, // Initial X, Y position on canvas
+    8, 8, // Frame width, Frame height (original pixel dimensions)
+    7, // Total frames in animation
+    3, // Frames per row (assuming 3 for your 24x24 sheet)
+    8, // Animation speed (smaller = faster animation)
+    8 // Scale: draws 8x8 as 64x64 on canvas
+);
+allGameSprites.push(swordCharacter);
+
+// Your tornado special attack (could be a separate sprite)
+const tornadoEffect = new GameSprite(
+    'Bens Sprites/Tornado.png', // Replace with tornado sprite sheet
+    200, 100, // Initial X, Y
+    16, 16, // Example frame size for tornado
+    5, // Total frames
+    5, // Frames per row
+    5, // Animation speed
+    4 // Scale
+);
+allGameSprites.push(tornadoEffect);
 
 
 
+// --- Game Loop Modified ---
+function gameLoop() {
+    context.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
 
-        
+    // Iterate through all sprites and update/draw them
+    for (let i = 0; i < allGameSprites.length; i++) {
+        const sprite = allGameSprites[i];
+        sprite.update(); // Update animation frame, and potentially position/state
+        sprite.draw(context); // Draw the sprite
+    }
+
+    requestAnimationFrame(gameLoop); // Request the next frame
+}
+
+// Ensure all images are loaded before starting the loop (important for multiple sprites)
+// A simple way is to check the `isLoaded` flag on all sprites
+// A more robust way uses Promises or a loading manager.
+function checkAllSpritesLoaded() {
+    let allLoaded = true;
+    for (let i = 0; i < allGameSprites.length; i++) {
+        if (!allGameSprites[i].isLoaded) {
+            allLoaded = false;
+            break;
+        }
+    }
+
+    if (allLoaded) {
+        console.log("All sprites loaded! Starting game loop.");
+        gameLoop();
+    } else {
+        // If not all loaded, wait a bit and check again
+        setTimeout(checkAllSpritesLoaded, 100);
+    }
+}
+
+// Initiate the loading check
+checkAllSpritesLoaded();
