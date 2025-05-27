@@ -81,12 +81,12 @@ const allGameSprites = [];
 
 // Your main character (e.g., the sword character)
 const swordCharacter = new GameSprite(
-    'path/to/your/sword_spritesheet.png', // Replace with your sword sprite sheet
+    'Bens Sprites/Sword.png', // Replace with your sword sprite sheet
     50, 150, // Initial X, Y position on canvas
     8, 8, // Frame width, Frame height (original pixel dimensions)
-    7, // Total frames in animation
+    12, // Total frames in animation
     3, // Frames per row (assuming 3 for your 24x24 sheet)
-    8, // Animation speed (smaller = faster animation)
+    4, // Animation speed (smaller = faster animation)
     8 // Scale: draws 8x8 as 64x64 on canvas
 );
 allGameSprites.push(swordCharacter);
@@ -95,13 +95,37 @@ allGameSprites.push(swordCharacter);
 const tornadoEffect = new GameSprite(
     'Bens Sprites/Tornado.png', // Replace with tornado sprite sheet
     200, 100, // Initial X, Y
-    16, 16, // Example frame size for tornado
-    5, // Total frames
-    5, // Frames per row
+    8, 8, // Example frame size for tornado
+    7, // Total frames
+    3, // Frames per row
     5, // Animation speed
-    4 // Scale
+    8 // Scale
 );
 allGameSprites.push(tornadoEffect);
+
+document.addEventListener('keydown', (event) => {
+    switch (event.key) {
+        case 'ArrowLeft':
+            swordCharacter.x -= 20; // Move left
+            break;
+        case 'ArrowRight':
+            swordCharacter.x += 20; // Move right
+            break;
+        case 'ArrowUp':
+            swordCharacter.y -= 20; // Move up
+            break;
+        case 'ArrowDown':
+            swordCharacter.y += 20; // Move down
+            break;
+        case ' ':
+            // Trigger tornado effect on spacebar press
+            tornadoEffect.x = swordCharacter.x + 20; // Position relative to character
+            tornadoEffect.y = swordCharacter.y - 20; // Position above character
+            tornadoEffect.currentFrame = 0; // Reset animation frame for tornado effect
+            break;
+    }
+});
+
 
 
 
