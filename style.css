@@ -83,7 +83,7 @@
             position: relative;
             margin: 20px;
             background-image: url('Aarons\ Sprites/Toaster.png');
-            background-position: -75px;
+            background-position: -150px -150px;
             image-rendering: pixelated;
             background-size: 450px;
         }
