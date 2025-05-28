@@ -3,20 +3,18 @@ let ypos;
 let health;
 const toaster = document.getElementById("AChar");
 const canv = document.getElementById("gameCanvas");
-const startButton = document.getElementById('startButton');
-const mainMenu = document.getElementById('mainMenu');
-const charMenu = document.getElementById('charSelect');
 
 window.onload = function(){
 
 }
 
 
-document.getElementById('charSelect').addEventListener('click', () =>{
-    mainMenu.style.display = 'none'
-    charMenu.style.display = 'flex';
-}
-)
+document.getElementById('startButton').addEventListener('click', () => {
+     //Hide the start button and show the game canvas
+   document.getElementById('charSelect').style.display = 'flex';
+    document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('gameCanvas').style.display = 'none';
+});
 
 
 document.addEventListener("keydown", (event) =>{
