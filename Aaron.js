@@ -5,18 +5,18 @@ const toaster = document.getElementById("AChar");
 const canv = document.getElementById("gameCanvas");
 const startButton = document.getElementById('startButton');
 const mainMenu = document.getElementById('mainMenu');
-const charMenu = document.getElementById('charMenu');
+const charMenu = document.getElementById('charSelect');
 
 window.onload = function(){
-    yes()
+
 }
 
 
-startButton.onclick = function(){
+document.getElementById('charSelect').addEventListener('click', () =>{
     mainMenu.style.display = 'none'
-    charMenu.style.display = 'block'
+    charMenu.style.display = 'flex';
 }
-
+)
 
 
 document.addEventListener("keydown", (event) =>{
