@@ -15,6 +15,9 @@
             display: block; /* Remove extra space below canvas */
             border-radius: 8px; /* Rounded corners for the canvas */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+            width: 100%; /* Full width for responsiveness */
+            height: auto; /* Full height for responsiveness */
+            max-width: 800px; /* Maximum width for larger screens */
         }
 
         .info-box {

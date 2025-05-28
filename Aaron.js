@@ -9,12 +9,12 @@ window.onload = function(){
 }
 
 
-document.getElementById('startButton').addEventListener('click', () => {
+//document.getElementById('startButton').addEventListener('click', () => {
      //Hide the start button and show the game canvas
-   document.getElementById('charSelect').style.display = 'flex';
-    document.getElementById('mainMenu').style.display = 'none';
-        document.getElementById('gameCanvas').style.display = 'none';
-});
+  // document.getElementById('charSelect').style.display = 'flex';
+ //   document.getElementById('mainMenu').style.display = 'none';
+   //     document.getElementById('gameCanvas').style.display = 'none';
+//});
 
 
 document.addEventListener("keydown", (event) =>{
