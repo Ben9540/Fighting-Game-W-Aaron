@@ -1,12 +1,11 @@
- 
- //document.getElementById('startButton').addEventListener('click', () => {
+// --- Start Button Logic ---
+document.getElementById('startButton').addEventListener('click', () => {
     // Hide the start button and show the game canvas
-   // document.getElementById('gameCanvas').style.display = 'flex';
-  //  document.getElementById('mainMenu').style.display = 'none';
- //});
- 
-//Sprites
+   document.getElementById('gameCanvas').style.display = 'flex';
+    document.getElementById('mainMenu').style.display = 'none';
+});
 
+// --- Sprites Class ---
 class GameSprite {
     constructor(imageSrc, x, y, frameWidth, frameHeight, totalFrames, framesPerRow, animationSpeed, scale = 1) {
         this.image = new Image();
@@ -17,55 +16,102 @@ class GameSprite {
         this.frameHeight = frameHeight;
         this.totalFrames = totalFrames;
         this.framesPerRow = framesPerRow;
-        this.animationSpeed = animationSpeed; // How many game loop frames before changing sprite frame
-        this.scale = scale; // How much to scale the sprite when drawing
+        this.animationSpeed = animationSpeed;
+        this.scale = scale;
 
         this.currentFrame = 0;
-        this.frameCounter = 0; // Counter for animation speed
-        this.isLoaded = false; // To track if the image is loaded
+        this.frameCounter = 0;
+        this.isLoaded = false;
+
+        // --- NEW: Movement and Rotation Properties ---
+        this.vx = 0; // velocity x
+        this.vy = 0; // velocity y
+        this.currentRotation = 0; // Current rotation angle in radians
+        this.rotationSpeed = Math.PI / 20; // Max tilt angle (e.g., 9 degrees in radians)
+        this.rotationSmoothness = 0.15; // How smoothly the sprite rotates (0 to 1, higher = faster snap)
 
         this.image.onload = () => {
             this.isLoaded = true;
             console.log(`Sprite loaded: ${imageSrc}`);
-            // You might want a global flag or Promise.all to ensure all sprites are loaded before starting the gameLoop
         };
         this.image.onerror = () => {
             console.error(`Error loading sprite: ${imageSrc}`);
         };
     }
 
-    // Method to update the sprite's animation frame
+    // Method to update the sprite's animation frame and position/rotation
     update() {
+        // Update animation frame
         this.frameCounter++;
         if (this.frameCounter >= this.animationSpeed) {
             this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
             this.frameCounter = 0;
         }
-        // You can add movement logic here too (e.g., this.x += this.vx;)
+
+        // --- NEW: Update Position ---
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // --- NEW: Update Rotation based on Velocity ---
+        let desiredRotation = 0;
+        const tiltAngle = this.rotationSpeed;
+
+        if (this.vx > 0) { // Moving right
+            desiredRotation = tiltAngle;
+        } else if (this.vx < 0) { // Moving left
+            desiredRotation = -tiltAngle;
+        }
+        // You can add more complex diagonal angling if needed,
+        // or prioritize horizontal tilt for a butterfly's side-to-side motion.
+        // For vertical movement, butterflies might not typically tilt like this,
+        // but you could add a slight nose-up/down if desired:
+        // else if (this.vy < 0) { // Moving up
+        //     desiredRotation = -Math.PI / 60; // Slight nose up
+        // } else if (this.vy > 0) { // Moving down
+        //     desiredRotation = Math.PI / 60; // Slight nose down
+        // }
+
+
+        // Smoothly interpolate currentRotation towards desiredRotation
+        this.currentRotation = this.currentRotation * (1 - this.rotationSmoothness) + desiredRotation * this.rotationSmoothness;
     }
 
-    // Method to draw the sprite on the canvas
+    // Method to draw the sprite on the canvas with rotation
     draw(context) {
         if (!this.isLoaded) {
-            return; // Don't draw if the image hasn't loaded yet
+            return;
         }
 
         const sx = (this.currentFrame % this.framesPerRow) * this.frameWidth;
         const sy = Math.floor(this.currentFrame / this.framesPerRow) * this.frameHeight;
 
-        // Calculate drawing dimensions based on scale
         const drawWidth = this.frameWidth * this.scale;
         const drawHeight = this.frameHeight * this.scale;
 
+        // Calculate the center of the sprite for rotation
+        const centerX = this.x + drawWidth / 2;
+        const centerY = this.y + drawHeight / 2;
+
+        context.save(); // Save the current canvas state
+
+        // Translate the canvas origin to the center of the sprite
+        context.translate(centerX, centerY);
+
+        // Rotate the canvas
+        context.rotate(this.currentRotation);
+
+        // Draw the sprite, offset by half its drawing width/height because the origin is now its center
         context.drawImage(
             this.image,
             sx, sy, this.frameWidth, this.frameHeight, // Source clipping
-            this.x, this.y, drawWidth, drawHeight // Destination on canvas
+            -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight // Destination on canvas (relative to new origin)
         );
+
+        context.restore(); // Restore the canvas state to prevent affecting other drawings
     }
 }
 
-// In your main JavaScript file (e.g., main.js)
+// --- Canvas Setup ---
 const canvas = document.getElementById('gameCanvas');
 const context = canvas.getContext('2d');
 
@@ -77,87 +123,101 @@ context.msImageSmoothingEnabled = false;
 // Array to hold all your active sprites
 const allGameSprites = [];
 
-// --- Instantiate your sprites ---
-
-// Your main character (e.g., the sword character)
-const swordCharacter = new GameSprite(
-    'Bens Sprites/Sword.png', // Replace with your sword sprite sheet
-    50, 150, // Initial X, Y position on canvas
-    8, 8, // Frame width, Frame height (original pixel dimensions)
-    12, // Total frames in animation
-    3, // Frames per row (assuming 3 for your 24x24 sheet)
-    4, // Animation speed (smaller = faster animation)
-    8 // Scale: draws 8x8 as 64x64 on canvas
-);
-
-
-// Your tornado special attack (could be a separate sprite)
-const tornadoEffect = new GameSprite(
-    'Bens Sprites/Tornado.png', // Replace with tornado sprite sheet
-    200, 100, // Initial X, Y
-    8, 8, // Example frame size for tornado
-    7, // Total frames
-    3, // Frames per row
-    5, // Animation speed
-    8 // Scale
-);
+// --- Sprite Instantiation ---
+// Define a consistent movement speed for the butterfly
+const BUTTERFLY_MOVE_SPEED = 2; // Pixels per frame
 
 const IdleButterfly = new GameSprite(
-    'Bens Sprites/IdleButterfly.png', // Replace with tornado sprite sheet
-    200, 100, // Initial X, Y
-    8, 8, // Example frame size for tornado
-    5, // Total frames
-    2, // Frames per row
+    'Bens Sprites/IdleButterfly.png',
+    200, 100, // Initial X, Y position
+    8, 8, // Frame width, Frame height
+    5, // Total frames in animation
+    2, // Frames per row (e.g., 2 for a 8x8 with 5 frames could mean 3 rows total)
     7, // Animation speed
     4.5 // Scale
 );
-allGameSprites.push(IdleButterfly); // Add sprites to the array
+allGameSprites.push(IdleButterfly);
 
-
+// --- NEW: Keyboard State Tracking ---
+const keysPressed = {
+    ArrowLeft: false,
+    ArrowRight: false,
+    ArrowUp: false,
+    ArrowDown: false
+};
 
 document.addEventListener('keydown', (event) => {
-    switch (event.key) {
-        case 'ArrowLeft':
-            IdleButterfly.x -= 20; // Move left
-            break;
-        case 'ArrowRight':
-            IdleButterfly.x += 20; // Move right
-            break;
-        case 'ArrowUp':
-            IdleButterfly.y -= 20; // Move up
-            break;
-        case 'ArrowDown':
-            IdleButterfly.y += 20; // Move down
-            break;
-        case ' ':
-            // Trigger tornado effect on spacebar press
-            IdleButterfly.x = IdleButterfly.x + 20; // Position relative to character
-            IdleButterfly.y = IdleButterfly.y - 20; // Position above character
-            IdleButterfly.currentFrame = 0; // Reset animation frame for tornado effect
-            break;
+    // Only set the flag to true if it's one of our tracked movement keys
+    if (keysPressed.hasOwnProperty(event.key)) {
+        keysPressed[event.key] = true;
+        event.preventDefault(); // Prevent default browser scrolling/actions for arrow keys
+    }
+
+    // Spacebar for tornado effect (this logic is separate from continuous movement)
+    if (event.key === ' ') {
+        // IMPORTANT: The way you're currently handling tornadoEffect here
+        // (modifying IdleButterfly's position and resetting its frame)
+        // is likely not what you want. If the tornado is a separate sprite
+        // like `tornadoEffect` declared above, you'd want to:
+        // 1. Potentially add `tornadoEffect` to `allGameSprites` when triggered.
+        // 2. Position `tornadoEffect` relative to `IdleButterfly`.
+        // 3. You might even want to remove `tornadoEffect` from `allGameSprites`
+        //    after its animation finishes.
+        // For now, I'm commenting out the tornado logic as it applies to IdleButterfly.
+        // IdleButterfly.x = IdleButterfly.x + 20;
+        // IdleButterfly.y = IdleButterfly.y - 20;
+        // IdleButterfly.currentFrame = 0;
+        console.log("Spacebar pressed. Tornado effect logic here.");
+    }
+});
+
+document.addEventListener('keyup', (event) => {
+    // Set the flag back to false when the key is released
+    if (keysPressed.hasOwnProperty(event.key)) {
+        keysPressed[event.key] = false;
     }
 });
 
 
-
-
-// --- Game Loop Modified ---
+// --- Game Loop ---
 function gameLoop() {
     context.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
+
+    // --- NEW: Update Butterfly Velocity based on Key State ---
+    IdleButterfly.vx = 0;
+    IdleButterfly.vy = 0;
+
+    if (keysPressed.ArrowLeft) {
+        IdleButterfly.vx = -BUTTERFLY_MOVE_SPEED;
+    } else if (keysPressed.ArrowRight) {
+        IdleButterfly.vx = BUTTERFLY_MOVE_SPEED;
+    }
+
+    if (keysPressed.ArrowUp) {
+        IdleButterfly.vy = -BUTTERFLY_MOVE_SPEED;
+    } else if (keysPressed.ArrowDown) {
+        IdleButterfly.vy = BUTTERFLY_MOVE_SPEED;
+    }
+
+    // Optional: Normalize diagonal speed if you don't want faster diagonals
+    // if (IdleButterfly.vx !== 0 && IdleButterfly.vy !== 0) {
+    //     const magnitude = Math.sqrt(IdleButterfly.vx * IdleButterfly.vx + IdleButterfly.vy * IdleButterfly.vy);
+    //     IdleButterfly.vx = (IdleButterfly.vx / magnitude) * BUTTERFLY_MOVE_SPEED;
+    //     IdleButterfly.vy = (IdleButterfly.vy / magnitude) * BUTTERFLY_MOVE_SPEED;
+    // }
+
 
     // Iterate through all sprites and update/draw them
     for (let i = 0; i < allGameSprites.length; i++) {
         const sprite = allGameSprites[i];
-        sprite.update(); // Update animation frame, and potentially position/state
+        sprite.update(); // Update animation frame, position, and rotation
         sprite.draw(context); // Draw the sprite
     }
 
     requestAnimationFrame(gameLoop); // Request the next frame
 }
 
-// Ensure all images are loaded before starting the loop (important for multiple sprites)
-// A simple way is to check the `isLoaded` flag on all sprites
-// A more robust way uses Promises or a loading manager.
+// --- Initial Loading Check ---
 function checkAllSpritesLoaded() {
     let allLoaded = true;
     for (let i = 0; i < allGameSprites.length; i++) {
@@ -171,10 +231,30 @@ function checkAllSpritesLoaded() {
         console.log("All sprites loaded! Starting game loop.");
         gameLoop();
     } else {
-        // If not all loaded, wait a bit and check again
         setTimeout(checkAllSpritesLoaded, 100);
     }
 }
 
 // Initiate the loading check
 checkAllSpritesLoaded();
+
+// --- Unused Sprites (for reference, not added to allGameSprites array) ---
+// const swordCharacter = new GameSprite(
+//     'Bens Sprites/Sword.png',
+//     50, 150,
+//     8, 8,
+//     12,
+//     3,
+//     4,
+//     8
+// );
+
+// const tornadoEffect = new GameSprite(
+//     'Bens Sprites/Tornado.png',
+//     200, 100,
+//     8, 8,
+//     7,
+//     3,
+//     5,
+//     8
+// );
