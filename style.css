@@ -68,6 +68,33 @@
             width:100%;
             height:100%;
             background-color: coral;
+position: relative;
+display: none;
+        }
+
+        #char1{
+            width:150px;
+            height:150px;
+            background-color: aqua;
+            border: black, solid, 5px;
             position: relative;
-            display:none;
+            margin: 20px;
+        }
+
+        #char2{
+            width:150px;
+            height:150px;
+            background-color: aqua;
+            border: black, solid, 5px;
+            position: relative;
+            margin: 20px;
+        }
+
+        #charportrait1{
+            width:100%;
+            height:100%;
+            background-image: url('Aarons\ Sprites/Toaster.png');
+            background-position: left,top;
+            image-rendering: pixelated;
+            background-size: 256px;
         }
