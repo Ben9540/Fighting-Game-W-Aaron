@@ -2,6 +2,22 @@ let xpos;
 let ypos;
 let health;
 const toaster = document.getElementById("AChar");
+const canv = document.getElementById("gameCanvas");
+const startButton = document.getElementById('startButton');
+const mainMenu = document.getElementById('mainMenu');
+const charMenu = document.getElementById('charMenu');
+
+window.onload = function(){
+    yes()
+}
+
+
+startButton.onclick = function(){
+    mainMenu,style,display = 'none'
+    charMenu,style,display = 'auto'
+}
+
+
 
 document.addEventListener("keydown", (event) =>{
     switch (event.key) {
