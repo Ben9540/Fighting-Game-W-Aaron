@@ -13,8 +13,8 @@ window.onload = function(){
 
 
 startButton.onclick = function(){
-    mainMenu,style,display = 'none'
-    charMenu,style,display = 'auto'
+    mainMenu.style.display = 'none'
+    charMenu.style.display = 'block'
 }
 
 
