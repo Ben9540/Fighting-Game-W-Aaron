@@ -1,9 +1,9 @@
  
- document.getElementById('startButton').addEventListener('click', () => {
+ //document.getElementById('startButton').addEventListener('click', () => {
     // Hide the start button and show the game canvas
-    document.getElementById('gameCanvas').style.display = 'flex';
-    document.getElementById('mainMenu').style.display = 'none';
- });
+   // document.getElementById('gameCanvas').style.display = 'flex';
+  //  document.getElementById('mainMenu').style.display = 'none';
+ //});
  
 //Sprites
 
@@ -89,7 +89,7 @@ const swordCharacter = new GameSprite(
     4, // Animation speed (smaller = faster animation)
     8 // Scale: draws 8x8 as 64x64 on canvas
 );
-allGameSprites.push(swordCharacter);
+
 
 // Your tornado special attack (could be a separate sprite)
 const tornadoEffect = new GameSprite(
@@ -101,27 +101,39 @@ const tornadoEffect = new GameSprite(
     5, // Animation speed
     8 // Scale
 );
-allGameSprites.push(tornadoEffect);
+
+const IdleButterfly = new GameSprite(
+    'Bens Sprites/IdleButterfly.png', // Replace with tornado sprite sheet
+    200, 100, // Initial X, Y
+    8, 8, // Example frame size for tornado
+    5, // Total frames
+    2, // Frames per row
+    7, // Animation speed
+    4.5 // Scale
+);
+allGameSprites.push(IdleButterfly); // Add sprites to the array
+
+
 
 document.addEventListener('keydown', (event) => {
     switch (event.key) {
         case 'ArrowLeft':
-            swordCharacter.x -= 20; // Move left
+            IdleButterfly.x -= 20; // Move left
             break;
         case 'ArrowRight':
-            swordCharacter.x += 20; // Move right
+            IdleButterfly.x += 20; // Move right
             break;
         case 'ArrowUp':
-            swordCharacter.y -= 20; // Move up
+            IdleButterfly.y -= 20; // Move up
             break;
         case 'ArrowDown':
-            swordCharacter.y += 20; // Move down
+            IdleButterfly.y += 20; // Move down
             break;
         case ' ':
             // Trigger tornado effect on spacebar press
-            tornadoEffect.x = swordCharacter.x + 20; // Position relative to character
-            tornadoEffect.y = swordCharacter.y - 20; // Position above character
-            tornadoEffect.currentFrame = 0; // Reset animation frame for tornado effect
+            IdleButterfly.x = IdleButterfly.x + 20; // Position relative to character
+            IdleButterfly.y = IdleButterfly.y - 20; // Position above character
+            IdleButterfly.currentFrame = 0; // Reset animation frame for tornado effect
             break;
     }
 });
