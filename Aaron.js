@@ -4,17 +4,17 @@ let health;
 const toaster = document.getElementById("AChar");
 const canv = document.getElementById("gameCanvas");
 
-window.onload = function(){
-
-}
-
-
 document.getElementById('startButton').addEventListener('click', () => {
 
    document.getElementById('charSelect').style.display = 'flex';
     document.getElementById('mainMenu').style.display = 'none';
         document.getElementById('gameCanvas').style.display = 'none';
 });
+
+function gameStart(){
+    document.getElementById('charSelect').style.display = 'none';
+    document.getElementById('gameCanvas').style.display = 'flex';
+}
 
 
 document.addEventListener("keydown", (event) =>{
