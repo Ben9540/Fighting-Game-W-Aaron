@@ -9,30 +9,34 @@ window.onload = function(){
 }
 
 
-//document.getElementById('startButton').addEventListener('click', () => {
-     //Hide the start button and show the game canvas
-  // document.getElementById('charSelect').style.display = 'flex';
- //   document.getElementById('mainMenu').style.display = 'none';
-   //     document.getElementById('gameCanvas').style.display = 'none';
-//});
+document.getElementById('startButton').addEventListener('click', () => {
+
+   document.getElementById('charSelect').style.display = 'flex';
+    document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('gameCanvas').style.display = 'none';
+});
 
 
 document.addEventListener("keydown", (event) =>{
     switch (event.key) {
-        case 'ArrowLeft':
+        case 'a':
             xpos ++;
             toaster.style.left = xpos + 'px';
             break;
 
-        case 'ArrowRight':
+        case 'd':
             xpos ++;
             toaster.style.left = xpos + 'px';
             break;
 
-        case 'ArrowUp':
+        case 'w':
             ypos ++;
-            toaster.style.left = xpos + 'px';
+            toaster.style.top = xpos + 'px';
             break;
+
+
+            toaster.style.left = xpos + 'px';
+            toaster.style.top = ypos + 'px';
     }
 })
 
