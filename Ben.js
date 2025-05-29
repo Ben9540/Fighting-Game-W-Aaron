@@ -1,9 +1,4 @@
-// --- Start Button Logic ---
-document.getElementById('startButton').addEventListener('click', () => {
-    // Hide the start button and show the game canvas
-   document.getElementById('gameCanvas').style.display = 'block';
-    document.getElementById('mainMenu').style.display = 'none';
-});
+
 
 // --- Sprites Class ---
 class GameSprite {
