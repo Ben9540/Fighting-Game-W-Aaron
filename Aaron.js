@@ -32,8 +32,6 @@ class gameSprite2 {
     }
 
     update() {
-        // Example movement: move right 1px per frame
-        this.x += 1;
 
         // Update animation frame
         this.tickCount++;
@@ -77,13 +75,13 @@ const IdleToaster = new gameSprite2(
     7,
     4.5
 );
-allGameSprites.push(IdleToaster);
+allGameSprites2.push(IdleToaster);
 
 // Game loop
 function gameLoop() {
     ctx.clearRect(0, 0, canvas2.width, canvas2.height);
 
-    allGameSprites.forEach(sprite => {
+    allGameSprites2.forEach(sprite => {
         sprite.update();
         sprite.draw(ctx);
     });
@@ -111,9 +109,6 @@ document.addEventListener("keydown", (event) => {
             break;
         case 'w':
             IdleToaster.y -= 5;
-            break;
-        case 's':
-            IdleToaster.y += 5;
             break;
     }
 });
