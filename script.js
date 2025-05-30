@@ -3,7 +3,9 @@ export const BUTTERFLY_MOVE_SPEED = 0.5;
 export const TORNADO_PROJECTILE_SPEED = 2;
 export const TORNADO_LIFETIME_FRAMES = 250;
 export const TORNADO_COOLDOWN_DURATION = 250;
+export const HIT_COOLDOWN_DURATION = 60; // NEW: Cooldown for hit animation (e.g., 1 second)
 let tornadoCooldown = 0;
+let hitCooldown = 0; // NEW: Cooldown variable for hit animation
 export const TOASTER_MOVE_SPEED = 0.5;
 
 // --- Canvas Setup ---
@@ -51,6 +53,7 @@ export class GameSprite {
         this.framesPerRow = framesPerRow;
         this.animationSpeed = animationSpeed;
         this.scale = scale;
+        this.defaultAnimationSpeed = animationSpeed; // Store default speed
 
         this.currentFrame = 0;
         this.frameCounter = 0;
@@ -66,6 +69,10 @@ export class GameSprite {
         this.lifeRemaining = lifeTime;
         this.shouldRemove = false;
 
+        this.animations = {}; // Stores animation configurations { 'idle': { start: 0, end: 4, speed: 7, loop: true }, ... }
+        this.currentAnimationState = ''; // e.g., 'idle', 'hitUp'
+        this.currentAnimationConfig = null; // The config object for the current state
+
         this.image.onload = () => {
             this.isLoaded = true;
             // console.log(`Sprite loaded: ${imageSrc}`); // Optional: for debugging
@@ -75,12 +82,51 @@ export class GameSprite {
         };
     }
 
-    update() {
-        this.frameCounter++;
-        if (this.frameCounter >= this.animationSpeed) {
-            this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
-            this.frameCounter = 0;
+     setAnimation(state) {
+        if (this.currentAnimationState === state) {
+            return; // Animation is already playing
         }
+        const config = this.animations[state];
+        if (!config) {
+            console.warn(`Animation state '${state}' not found for sprite.`);
+            return;
+        }
+
+        this.currentAnimationState = state;
+        this.currentAnimationConfig = config;
+        this.currentFrame = config.start; // Reset to the start frame of the new animation
+        this.frameCounter = 0; // Reset frame counter
+    }
+
+    update() {
+        // Update animation frame based on currentAnimationConfig
+        if (this.currentAnimationConfig) {
+            this.frameCounter++;
+            if (this.frameCounter >= this.currentAnimationConfig.speed) {
+                this.frameCounter = 0;
+                this.currentFrame++;
+
+                // Check if animation has reached its end
+                if (this.currentFrame > this.currentAnimationConfig.end) {
+                    if (this.currentAnimationConfig.loop) {
+                        this.currentFrame = this.currentAnimationConfig.start; // Loop back
+                    } else {
+                        // Non-looping animation finished, revert to idle (or previous state)
+                        this.currentFrame = this.currentAnimationConfig.end; // Stay on last frame
+                        // This is where you'd typically revert to an 'idle' state
+                        // The specific character's module (Ben2.js) will handle this for player actions
+                    }
+                }
+            }
+        } else {
+            // Fallback if no animation is set (shouldn't happen if initialized properly)
+            this.frameCounter++;
+            if (this.frameCounter >= this.defaultAnimationSpeed) {
+                this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+                this.frameCounter = 0;
+            }
+        }
+
 
         // Update Position
         this.x += this.vx;
@@ -109,6 +155,7 @@ export class GameSprite {
         }
 
         // Update Rotation
+    if (this === IdleButterfly) {
         let desiredRotation = 0;
         const tiltAngle = this.rotationSpeed;
         if (this.vx > 0) {
@@ -118,6 +165,7 @@ export class GameSprite {
         }
         this.currentRotation = this.currentRotation * (1 - this.rotationSmoothness) + desiredRotation * this.rotationSmoothness;
     }
+}
 
        draw(context) {
         if (!this.isLoaded) return;
@@ -156,6 +204,10 @@ function gameLoop() {
     // Decrement Tornado Cooldown (Managed centrally)
     if (tornadoCooldown > 0) {
         tornadoCooldown--;
+    }
+
+     if (hitCooldown > 0) { // NEW: Decrement hit cooldown
+        hitCooldown--;
     }
 
     // Process and Filter all sprites
@@ -208,6 +260,8 @@ document.addEventListener('keydown', (event) => {
     }
     // Handle tornado attack logic via the player module
     handleTornadoAttack(event.key, tornadoCooldown, (newCooldown) => { tornadoCooldown = newCooldown; });
+
+    handleHitAttack(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; }); // NEW: Pass hitCooldown
 });
 
 document.addEventListener('keyup', (event) => {

@@ -27,15 +27,19 @@ export function initializePlayerSprite() {
     );
     addSprite(IdleButterfly); // Add it to the main sprite array
     console.log("IdleButterfly initialized and added."); // Add a log for debugging
-    const tornadoEffect = new GameSprite(
-    'Bens Sprites/Tornado.png',
-    200, 100,
-    8, 8,
-    7,
-    3,
-    5,
-    4.5
-);
+    IdleButterfly.animations = {
+        'idle': { start: 0, end: 4, speed: 7, loop: true }, // Frames 0-4 for idle
+        'hitRight': { start: 5, end: 7, speed: 5, loop: false, nextState: 'idle' }, // Frames 5-7 for hit right
+        'hitLeft': { start: 8, end: 10, speed: 5, loop: false, nextState: 'idle' }, // Frames 8-10 for hit left
+        'hitUp': { start: 11, end: 13, speed: 5, loop: false, nextState: 'idle' }, // Frames 11-13 for hit up
+        'hitDown': { start: 14, end: 16, speed: 5, loop: false, nextState: 'idle' } // Frames 14-16 for hit down
+        // Adjust frame numbers (start/end) and speed based on your actual sprite sheet layout
+    };
+
+    IdleButterfly.setAnimation('idle'); // Set initial animation state
+    IdleButterfly.lastDirection = 'right'; // NEW: Track last facing direction
+
+
 }
 
 // Unused/Reference Sprites
@@ -59,17 +63,39 @@ export function updatePlayerMovement(playerSprite, keys) {
     playerSprite.vx = 0;
     playerSprite.vy = 0;
 
+    // Update lastDirection based on movement
     if (keys.ArrowLeft) {
         playerSprite.vx = -BUTTERFLY_MOVE_SPEED;
+        playerSprite.lastDirection = 'left';
     } else if (keys.ArrowRight) {
         playerSprite.vx = BUTTERFLY_MOVE_SPEED;
+        playerSprite.lastDirection = 'right';
     }
+
+    // Prioritize horizontal for rotation, but track vertical for hit animation
     if (keys.ArrowUp) {
         playerSprite.vy = -BUTTERFLY_MOVE_SPEED;
+        if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'up'; // Only if not moving horizontally
     } else if (keys.ArrowDown) {
         playerSprite.vy = BUTTERFLY_MOVE_SPEED;
+        if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'down'; // Only if not moving horizontally
     }
-    // Note: The playerSprite.update() call is handled in main.js gameLoop
+
+    // If not moving, ensure idle animation is playing (unless an attack is active)
+    if (playerSprite.vx === 0 && playerSprite.vy === 0 && playerSprite.currentAnimationState.startsWith('hit') === false) {
+        playerSprite.setAnimation('idle');
+    } else if (playerSprite.vx !== 0 || playerSprite.vy !== 0) {
+        // If moving, ensure idle animation is playing (unless an attack is active)
+        if (playerSprite.currentAnimationState.startsWith('hit') === false) {
+             playerSprite.setAnimation('idle'); // Or a 'run' animation if you have one
+        }
+    }
+
+    // Check if a non-looping animation has finished and revert to idle
+    if (playerSprite.currentAnimationConfig && !playerSprite.currentAnimationConfig.loop &&
+        playerSprite.currentFrame === playerSprite.currentAnimationConfig.end) {
+        playerSprite.setAnimation(playerSprite.currentAnimationConfig.nextState || 'idle');
+    }
 }
 
 // Function to handle tornado attack logic (exported)
@@ -91,7 +117,7 @@ export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
             }
         } else {
             launchVx = TORNADO_PROJECTILE_SPEED; // Default right if idle
-        }
+        }z
 
         const newTornado = new GameSprite(
             'Bens Sprites/Tornado.png',
@@ -101,7 +127,7 @@ export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
             8, // each frame size
             7, // total frames
             3, // frames per row
-            5, // animation speed
+            15, // animation speed
             IdleButterfly.scale, 
             TORNADO_LIFETIME_FRAMES
         );
