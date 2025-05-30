@@ -64,11 +64,11 @@ class gameSprite2 {
 
 
 // Setup the canvas and context
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const canvas2 = document.getElementById('gameCanvas');
+const ctx = canvas2.getContext('2d');
 
 // The sprite you created
-const IdleToaster = new GameSprite2(
+const IdleToaster = new gameSprite2(
     'Aarons Sprites/Toaster.png',
     200, 100,
     8, 8,
@@ -81,7 +81,7 @@ allGameSprites.push(IdleToaster);
 
 // Game loop
 function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas2.width, canvas2.height);
 
     allGameSprites.forEach(sprite => {
         sprite.update();
