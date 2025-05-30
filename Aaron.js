@@ -15,7 +15,7 @@ document.getElementById('startButton').addEventListener('click', () => {
 
 // Assuming GameSprite is a class like this:
 
-class GameSprite {
+class gameSprite2 {
     constructor(imageSrc, x, y, frameWidth, frameHeight, totalFrames, framesPerRow, animSpeed, scale) {
         this.image = new Image();
         this.image.src = imageSrc;
@@ -61,12 +61,14 @@ class GameSprite {
     }
 }
 
+
+
 // Setup the canvas and context
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // The sprite you created
-const IdleToaster = new GameSprite(
+const IdleToaster = new GameSprite2(
     'Aarons Sprites/Toaster.png',
     200, 100,
     8, 8,
