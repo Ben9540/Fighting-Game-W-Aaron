@@ -256,6 +256,70 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+document.addEventListener('keydown', (event) => {
+
+    if (event.key === 'c') {
+        // Prevent launching multiple tornadoes if 'z' is held down
+        if (event.repeat || tornadoCooldown > 0) return;
+
+        for (let i = allGameSprites.length - 1; i >= 0; i--) {
+    if (allGameSprites[i].image.src.includes('Tornado.png')) {
+        allGameSprites.splice(i, 1);
+    }
+}
+
+// --- NEW: Set Cooldown when Tornado is Launched ---
+        tornadoCooldown = TORNADO_COOLDOWN_DURATION; // Start the cooldown timer
+
+
+        let launchVx = 0;
+        let launchVy = 0;
+
+        // --- Determine Launch Direction based on Butterfly's Velocity ---
+        if (IdleButterfly.vx !== 0 || IdleButterfly.vy !== 0) {
+            // Calculate the current magnitude (speed) of the butterfly's movement
+            const butterflyCurrentSpeed = Math.sqrt(IdleButterfly.vx * IdleButterfly.vx + IdleButterfly.vy * IdleButterfly.vy);
+
+            if (butterflyCurrentSpeed > 0) { // Avoid division by zero if butterfly is perfectly still
+                // Normalize the butterfly's current velocity vector (make its length 1)
+                // Then, scale it by the desired TORNADO_PROJECTILE_SPEED
+                launchVx = (IdleButterfly.vx / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
+                launchVy = (IdleButterfly.vy / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
+            }
+        } else {
+            // If the butterfly is completely idle (vx=0, vy=0),
+            // you need a default direction. For example, launch right:
+            launchVx = TORNADO_PROJECTILE_SPEED;
+            // You could also store a 'lastFacingDirection' property on the butterfly
+            // and use that here if you want it to launch in the direction it was last moving.
+        }
+
+        // --- Create a NEW Tornado Sprite Instance ---
+        const newTornado = new GameSprite(
+            'Bens Sprites/Tornado.png', // Your tornado sprite sheet path
+            // Initial position (spawn near the butterfly)
+            // Adjust these offsets to place the tornado relative to the butterfly
+            IdleButterfly.x + (IdleButterfly.frameWidth * IdleButterfly.scale) / 2 - (8 * IdleButterfly.scale) / 2, // Centered horizontally
+            IdleButterfly.y + (IdleButterfly.frameHeight * IdleButterfly.scale) / 2 - (8 * IdleButterfly.scale) / 2, // Centered vertically
+            8, 8, // Tornado frame width and height (adjust if your tornado sprite is different)
+            7, // Total frames for tornado animation
+            3, // Frames per row for tornado animation
+            5, // Tornado animation speed
+            IdleButterfly.scale, // Use the same scale as the butterfly, or adjust
+            TORNADO_LIFETIME_FRAMES // Set the lifetime for the tornado
+        );
+
+        // --- Assign the calculated launch velocity to the new tornado ---
+        newTornado.vx = launchVx;
+        newTornado.vy = launchVy;
+
+        // --- Add the new tornado to the game's active sprites array ---
+        allGameSprites.push(newTornado);
+
+        console.log("Tornado launched!");
+    }
+});
+
 document.addEventListener('keyup', (event) => {
     // Set the flag back to false when the key is released
     if (keysPressed.hasOwnProperty(event.key)) {
