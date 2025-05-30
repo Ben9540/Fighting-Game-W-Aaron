@@ -46,6 +46,9 @@ class GameSprite {
             this.frameCounter = 0;
         }
 
+        const scaledWidth = this.frameWidth * this.scale;
+        const scaledHeight = this.frameHeight * this.scale;
+
         // --- NEW: Update Position ---
         this.x += this.vx;
         this.y += this.vy;
@@ -53,7 +56,33 @@ class GameSprite {
          this.x += this.vx; // THIS IS WHAT MAKES IT MOVE
          this.y += this.vy; // THIS IS WHAT MAKES IT MOVE
 
-//         // --- Lifetime Management (from previous suggestion) ---
+                 // --- NEW: Canvas Boundary Checks (Barriers) ---
+
+        // Check Left boundary
+        if (this.x < 0) {
+            this.x = 0; // Snap to the edge
+            this.vx = 0; // Stop horizontal movement
+        }
+        // Check Right boundary
+        // We add scaledWidth because 'this.x' is the top-left corner of the sprite
+        else if (this.x + scaledWidth > canvas.width) {
+            this.x = canvas.width - scaledWidth; // Snap to the edge
+            this.vx = 0; // Stop horizontal movement
+        }
+
+        // Check Top boundary
+        if (this.y < 0) {
+            this.y = 0; // Snap to the edge
+            this.vy = 0; // Stop vertical movement
+        }
+        // Check Bottom boundary
+        // We add scaledHeight because 'this.y' is the top-left corner of the sprite
+        else if (this.y + scaledHeight > canvas.height) {
+            this.y = canvas.height - scaledHeight; // Snap to the edge
+            this.vy = 0; // Stop vertical movement
+        }
+
+         // --- Lifetime Management (from previous suggestion) ---
          if (this.lifeTime > 0) {
              this.lifeRemaining--;
              if (this.lifeRemaining <= 0) {
@@ -134,7 +163,7 @@ const allGameSprites = [];
 
 // --- Sprite Instantiation ---
 // Define a consistent movement speed for the butterfly
-const BUTTERFLY_MOVE_SPEED = 2; // Pixels per frame
+const BUTTERFLY_MOVE_SPEED = 0.5; // Pixels per frame
 
 const IdleButterfly = new GameSprite(
     'Bens Sprites/IdleButterfly.png',
@@ -164,11 +193,20 @@ document.addEventListener('keydown', (event) => {
 
     // Spacebar for tornado effect (this logic is separate from continuous movement)
    document.addEventListener('keydown', (event) => {
-    // ... (existing ArrowLeft, ArrowRight, ArrowUp, ArrowDown logic) ...
 
     if (event.key === 'z') {
         // Prevent launching multiple tornadoes if 'z' is held down
-        if (event.repeat) return;
+        if (event.repeat || tornadoCooldown > 0) return;
+
+        for (let i = allGameSprites.length - 1; i >= 0; i--) {
+    if (allGameSprites[i].image.src.includes('Tornado.png')) {
+        allGameSprites.splice(i, 1);
+    }
+}
+
+// --- NEW: Set Cooldown when Tornado is Launched ---
+        tornadoCooldown = TORNADO_COOLDOWN_DURATION; // Start the cooldown timer
+
 
         let launchVx = 0;
         let launchVy = 0;
@@ -231,6 +269,10 @@ document.addEventListener('keyup', (event) => {
 function gameLoop() {
     context.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
 
+    if (tornadoCooldown > 0) {
+        tornadoCooldown--;
+    }
+    
     // --- NEW: Update Butterfly Velocity based on Key State ---
     IdleButterfly.vx = 0;
     IdleButterfly.vy = 0;
@@ -262,8 +304,19 @@ function gameLoop() {
         sprite.draw(context); // Draw the sprite
     }
 
+    // Remove sprites that should be removed
+for (let i = allGameSprites.length - 1; i >= 0; i--) {
+    if (allGameSprites[i].shouldRemove) {
+        allGameSprites.splice(i, 1);
+    }
+}
+
+
     requestAnimationFrame(gameLoop); // Request the next frame
 }
+
+// ...existing code in gameLoop()...
+
 
 // --- Initial Loading Check ---
 function checkAllSpritesLoaded() {
@@ -297,8 +350,11 @@ checkAllSpritesLoaded();
 //     8
 // );
 
-const TORNADO_PROJECTILE_SPEED = 5; // Adjust this value to make the tornado faster or slower
-const TORNADO_LIFETIME_FRAMES = 60; // How many frames the tornado exists (e.g., 60 frames = 1 second at 60fps)
+const TORNADO_PROJECTILE_SPEED = 2; // Adjust this value to make the tornado faster or slower
+const TORNADO_LIFETIME_FRAMES = 120; // How many frames the tornado exists (e.g., 60 frames = 1 second at 60fps)
+const TORNADO_COOLDOWN_DURATION = 120; // Cooldown in frames (e.g., 30 frames = 0.5 seconds at 60fps)
+let tornadoCooldown = 0; // This variable will count down the cooldown
+
 
  const tornadoEffect = new GameSprite(
      'Bens Sprites/Tornado.png',
