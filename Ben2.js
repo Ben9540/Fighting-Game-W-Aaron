@@ -1,4 +1,4 @@
-import { GameSprite, addSprite, BUTTERFLY_MOVE_SPEED, TORNADO_PROJECTILE_SPEED, TORNADO_LIFETIME_FRAMES, TORNADO_COOLDOWN_DURATION } from './script.js';
+import { GameSprite, addSprite, BUTTERFLY_MOVE_SPEED, TORNADO_PROJECTILE_SPEED, TORNADO_LIFETIME_FRAMES, TORNADO_COOLDOWN_DURATION, HIT_COOLDOWN_DURATION } from './script.js';
 
 
 // =========================
@@ -12,34 +12,61 @@ import { GameSprite, addSprite, BUTTERFLY_MOVE_SPEED, TORNADO_PROJECTILE_SPEED, 
 // =========================
 
 
-export let IdleButterfly; // Declare it but don't initialize it yet
+export let Butterfly; // Declare it but don't initialize it yet
 
 export function initializePlayerSprite() {
     // Only create the butterfly when this function is called
-    IdleButterfly = new GameSprite(
-        'Bens Sprites/IdleButterfly.png',
+    Butterfly = new GameSprite(
+        'Bens Sprites/Butterfly.png',
         200, 100,// x and y pos
-        8, 8,// each frame size
+        16, 16,// each frame size
         5, //total frames
-        2, // frames per row
+        6, // frames per row
         10, // animation speed
         4.5 // scale
     );
-    addSprite(IdleButterfly); // Add it to the main sprite array
+    addSprite(Butterfly); // Add it to the main sprite array
     console.log("IdleButterfly initialized and added."); // Add a log for debugging
-    IdleButterfly.animations = {
-        'idle': { start: 0, end: 4, speed: 7, loop: true }, // Frames 0-4 for idle
-        'hitRight': { start: 5, end: 7, speed: 5, loop: false, nextState: 'idle' }, // Frames 5-7 for hit right
-        'hitLeft': { start: 8, end: 10, speed: 5, loop: false, nextState: 'idle' }, // Frames 8-10 for hit left
-        'hitUp': { start: 11, end: 13, speed: 5, loop: false, nextState: 'idle' }, // Frames 11-13 for hit up
-        'hitDown': { start: 14, end: 16, speed: 5, loop: false, nextState: 'idle' } // Frames 14-16 for hit down
+    Butterfly.animations = {
+        'idle': { start: 0, end: 4, speed: 30, loop: true }, // Frames 0-4 for idle
+        'hitRight': { start: 19, end: 25, speed: 20, loop: false, nextState: 'idle' }, // Frames 5-7 for hit right
+        'hitLeft': { start: 11, end: 18, speed: 20, loop: false, nextState: 'idle' }, // Frames 8-10 for hit left
+        'hitUp': { start: 5, end: 10, speed: 20, loop: false, nextState: 'idle' }, // Frames 11-13 for hit up
+        'hitDown': { start: 26, end: 32, speed: 20, loop: false, nextState: 'idle' } // Frames 14-16 for hit down
         // Adjust frame numbers (start/end) and speed based on your actual sprite sheet layout
     };
 
-    IdleButterfly.setAnimation('idle'); // Set initial animation state
-    IdleButterfly.lastDirection = 'right'; // NEW: Track last facing direction
+    Butterfly.setAnimation('idle'); // Set initial animation state
+    Butterfly.lastDirection = 'right'; // NEW: Track last facing direction
 
 
+}
+
+export function handleHitAttack(key, currentCooldown, setCooldownCallback) {
+    if (key === 'c') {
+        if (currentCooldown > 0) {
+            return;
+        }
+        setCooldownCallback(HIT_COOLDOWN_DURATION); // Use the new hit cooldown
+
+        let hitAnimationState = 'idle'; // Default to idle if direction is unknown
+
+        // Determine which hit animation to play based on last direction
+        switch (Butterfly.lastDirection) {
+            case 'up': hitAnimationState = 'hitUp'; break;
+            case 'down': hitAnimationState = 'hitDown'; break;
+            case 'left': hitAnimationState = 'hitLeft'; break;
+            case 'right': hitAnimationState = 'hitRight'; break;
+            default: hitAnimationState = 'hitRight'; break; // Fallback
+        }
+
+        Butterfly.setAnimation(hitAnimationState);
+        // You might want to temporarily stop movement during hit animation
+        // IdleButterfly.vx = 0;
+        // IdleButterfly.vy = 0;
+
+        console.log(`Butterfly performing ${hitAnimationState} attack.`);
+    }
 }
 
 // Unused/Reference Sprites
@@ -109,26 +136,26 @@ export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
         let launchVx = 0;
         let launchVy = 0;
 
-        if (IdleButterfly.vx !== 0 || IdleButterfly.vy !== 0) {
-            const butterflyCurrentSpeed = Math.sqrt(IdleButterfly.vx * IdleButterfly.vx + IdleButterfly.vy * IdleButterfly.vy);
+        if (Butterfly.vx !== 0 || Butterfly.vy !== 0) {
+            const butterflyCurrentSpeed = Math.sqrt(Butterfly.vx * Butterfly.vx + Butterfly.vy * Butterfly.vy);
             if (butterflyCurrentSpeed > 0) {
-                launchVx = (IdleButterfly.vx / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
-                launchVy = (IdleButterfly.vy / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
+                launchVx = (Butterfly.vx / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
+                launchVy = (Butterfly.vy / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
             }
         } else {
             launchVx = TORNADO_PROJECTILE_SPEED; // Default right if idle
-        }z
+        }
 
         const newTornado = new GameSprite(
             'Bens Sprites/Tornado.png',
-            IdleButterfly.x + (IdleButterfly.frameWidth * IdleButterfly.scale) / 2 - (8 * IdleButterfly.scale) / 2,
-            IdleButterfly.y + (IdleButterfly.frameHeight * IdleButterfly.scale) / 2 - (8 * IdleButterfly.scale) / 2,
+            Butterfly.x + (Butterfly.frameWidth * Butterfly.scale) / 2 - (8 * Butterfly.scale) / 2,
+            Butterfly.y + (Butterfly.frameHeight * Butterfly.scale) / 2 - (8 * Butterfly.scale) / 2,
             8, // each frame size
             8, // each frame size
             7, // total frames
             3, // frames per row
             15, // animation speed
-            IdleButterfly.scale, 
+            Butterfly.scale, 
             TORNADO_LIFETIME_FRAMES
         );
         newTornado.vx = launchVx;

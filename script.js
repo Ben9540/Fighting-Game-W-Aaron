@@ -155,7 +155,7 @@ export class GameSprite {
         }
 
         // Update Rotation
-    if (this === IdleButterfly) {
+    if (this === Butterfly) {
         let desiredRotation = 0;
         const tiltAngle = this.rotationSpeed;
         if (this.vx > 0) {
@@ -189,14 +189,14 @@ export class GameSprite {
     }
 }
 
-import { IdleButterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite  } from './Ben2.js';
+import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack  } from './Ben2.js';
 import { IdleToaster, initializeToasterSprite, updateToasterMovement } from './Aaron.js'; // Import the GameSprite class from Aaron.js
 
 function gameLoop() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     // Update Player (Butterfly) Movement
-    updatePlayerMovement(IdleButterfly, keysPressed); // Pass butterfly and keysPressed
+    updatePlayerMovement(Butterfly, keysPressed); // Pass butterfly and keysPressed
     // Update Toaster Movement
     updateToasterMovement(IdleToaster, keysPressed); // Pass toaster and keysPressed
 
@@ -239,7 +239,7 @@ function checkAllSpritesLoaded() {
 
     if (allLoaded) {
         console.log("All sprites loaded! Starting game loop.");
-         if (!IdleButterfly) { // Ensure it's only initialized once
+         if (!Butterfly) { // Ensure it's only initialized once
             initializePlayerSprite();
         }
         if (!IdleToaster) { // Ensure it's only initialized once
