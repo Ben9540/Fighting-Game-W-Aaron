@@ -1,9 +1,15 @@
-import { GameSprite, addSprite, BUTTERFLY_MOVE_SPEED, TORNADO_PROJECTILE_SPEED, TORNADO_LIFETIME_FRAMES, TORNADO_COOLDOWN_DURATION, HIT_COOLDOWN_DURATION } from './script.js';
+import { GameSprite, addSprite, BUTTERFLY_MOVE_SPEED, TORNADO_PROJECTILE_SPEED, TORNADO_LIFETIME_FRAMES, TORNADO_COOLDOWN_DURATION, HIT_COOLDOWN_DURATION, imageAssets  } from './script.js';
 
 
 // =========================
 // 3. GLOBAL GAME CONSTANTS
 // =========================
+const TORNADO_SPRITESHEET_KEY = 'tornado'; // Matches the key in script.js IMAGE_PATHS
+const TORNADO_FRAME_WIDTH = 8; // Assuming your tornado image frames are 8x8
+const TORNADO_FRAME_HEIGHT = 8;
+const TORNADO_COLLISION_WIDTH = 8; // Assuming 8x8 collision for tornado
+const TORNADO_COLLISION_HEIGHT = 8;
+const TORNADO_ANIMATION_SPEED = 15; // From your code
 
 
 
@@ -14,25 +20,44 @@ import { GameSprite, addSprite, BUTTERFLY_MOVE_SPEED, TORNADO_PROJECTILE_SPEED, 
 
 export let Butterfly; // Declare it but don't initialize it yet
 
+// IMPORTANT: Define the unified sprite sheet key from imageAssets
+const BUTTERFLY_SPRITESHEET_KEY = 'combinedButterfly'; // Matches the key in script.js imageAssets
+
+// Visual frame dimensions (actual size on the combined 16x16 spritesheet)
+const BUTTERFLY_FRAME_WIDTH = 16;
+const BUTTERFLY_FRAME_HEIGHT = 16;
+
+// Desired collision box dimensions (8x8)
+const BUTTERFLY_COLLISION_WIDTH = 8;
+const BUTTERFLY_COLLISION_HEIGHT = 8;
+
+// Common frames per row for the entire 16x16 combined sheet
+// YOU MUST ADJUST THIS TO YOUR ACTUAL SPRITESHEET LAYOUT
+const BUTTERFLY_COMMON_FRAMES_PER_ROW = 6; // Example: if your 16x16 sheet has 3 frames per row
+
+// Animation speeds
+const IDLE_ANIMATION_SPEED = 7;
+const HIT_ANIMATION_SPEED = 5;
+
 export function initializePlayerSprite() {
     // Only create the butterfly when this function is called
     Butterfly = new GameSprite(
-        'Bens Sprites/Butterfly.png',
-        200, 100,// x and y pos
-        16, 16,// each frame size
-        5, //total frames
-        6, // frames per row
-        10, // animation speed
+        imageAssets[BUTTERFLY_SPRITESHEET_KEY], // Use the pre-loaded combined image
+        200, 100, // Initial x, y (top-left of the 8x8 collision box)
+        BUTTERFLY_FRAME_WIDTH, BUTTERFLY_FRAME_HEIGHT, // Visual frame dimensions (16x16)
+        BUTTERFLY_COLLISION_WIDTH, BUTTERFLY_COLLISION_HEIGHT, // Collision box dimensions (8x8)
+        IDLE_ANIMATION_SPEED, // Default animation speed (used if no animation config is set)
         4.5 // scale
+        // lifeTime defaults to -1
     );
     addSprite(Butterfly); // Add it to the main sprite array
     console.log("IdleButterfly initialized and added."); // Add a log for debugging
     Butterfly.animations = {
-        'idle': { start: 0, end: 4, speed: 30, loop: true }, // Frames 0-4 for idle
-        'hitRight': { start: 19, end: 25, speed: 20, loop: false, nextState: 'idle' }, // Frames 5-7 for hit right
-        'hitLeft': { start: 11, end: 18, speed: 20, loop: false, nextState: 'idle' }, // Frames 8-10 for hit left
-        'hitUp': { start: 5, end: 10, speed: 20, loop: false, nextState: 'idle' }, // Frames 11-13 for hit up
-        'hitDown': { start: 26, end: 32, speed: 20, loop: false, nextState: 'idle' } // Frames 14-16 for hit down
+        'idle': { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 0, end: 4, speed: IDLE_ANIMATION_SPEED, loop: true }, // Frames 0-4 for idle
+        'hitRight': { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }, // Frames 5-7 for hit right
+        'hitLeft': { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }, // Frames 8-10 for hit left
+        'hitUp': { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 5, end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }, // Frames 11-13 for hit up
+        'hitDown': { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' } // Frames 14-16 for hit down
         // Adjust frame numbers (start/end) and speed based on your actual sprite sheet layout
     };
 
@@ -147,20 +172,27 @@ export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
         }
 
         const newTornado = new GameSprite(
-            'Bens Sprites/Tornado.png',
-            Butterfly.x + (Butterfly.frameWidth * Butterfly.scale) / 2 - (8 * Butterfly.scale) / 2,
-            Butterfly.y + (Butterfly.frameHeight * Butterfly.scale) / 2 - (8 * Butterfly.scale) / 2,
-            8, // each frame size
-            8, // each frame size
-            7, // total frames
-            3, // frames per row
-            15, // animation speed
-            Butterfly.scale, 
+            imageAssets[TORNADO_SPRITESHEET_KEY], // <-- Use the pre-loaded imageAssets object
+            Butterfly.x + (Butterfly.frameWidth * Butterfly.scale) / 2 - (TORNADO_COLLISION_WIDTH * Butterfly.scale) / 2,
+            Butterfly.y + (Butterfly.frameHeight * Butterfly.scale) / 2 - (TORNADO_COLLISION_HEIGHT * Butterfly.scale) / 2,
+            TORNADO_FRAME_WIDTH,
+            TORNADO_FRAME_HEIGHT,
+            TORNADO_COLLISION_WIDTH,
+            TORNADO_COLLISION_HEIGHT,
+            TORNADO_ANIMATION_SPEED,
+            Butterfly.scale,
             TORNADO_LIFETIME_FRAMES
         );
         newTornado.vx = launchVx;
         newTornado.vy = launchVy;
-        addSprite(newTornado); // Add new tornado to central sprite array
+
+        // Define tornado animations (you'll need to know your tornado sprite sheet layout)
+        newTornado.animations = {
+            'default': { framesPerRow: 3, start: 0, end: 6, speed: TORNADO_ANIMATION_SPEED, loop: true } // Example: 3 frames per row, frames 0-6
+        };
+        newTornado.setAnimation('default'); // Set initial animation for tornado
+
+        addSprite(newTornado);
     }
 }
 

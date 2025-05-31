@@ -37,30 +37,78 @@ export const keysPressed = {
     d: false  // For Toaster movement
 };
 
+export const imageAssets = {};
+const IMAGE_PATHS = {
+    combinedButterfly: 'Bens Sprites/Butterfly.png', // New combined 16x16 sheet
+    tornado: 'Bens Sprites/Tornado.png',
+    toaster: 'Aarons Sprites/Toaster.png'
+};
+
+
+
+function loadAllImages(callback) {
+    let loadedCount = 0;
+    const totalImages = Object.keys(IMAGE_PATHS).length;
+    console.log(`Starting to load ${totalImages} images...`);
+
+    if (totalImages === 0) { // Handle case with no images to load
+        console.log("No images to load. Proceeding with callback.");
+        callback();
+        return;
+    }
+
+    for (const key in IMAGE_PATHS) {
+        const img = new Image();
+        img.src = IMAGE_PATHS[key];
+        img.onload = () => {
+            imageAssets[key] = img; // Assign the loaded Image object
+            loadedCount++;
+            console.log(`Loaded ${key}: ${img.src}`);
+            if (loadedCount === totalImages) {
+                console.log("All images loaded.");
+                callback(); // Execute the callback ONLY when all are loaded
+            }
+        };
+        img.onerror = () => {
+            console.error(`Failed to load image: ${IMAGE_PATHS[key]}`);
+            loadedCount++; // Still increment count even on error to prevent infinite wait
+            if (loadedCount === totalImages) {
+                console.warn("Image loading finished with errors. Proceeding anyway.");
+                callback();
+            }
+        };
+    }
+}
+// Call loadAllImages in your startup sequence (e.g., when start button is clicked)
+// document.getElementById('startButton').addEventListener('click', () => { /* ... */ loadAllImages(checkAllSpritesLoaded); });
+
 
 
 
 // --- GameSprite Class (Consolidated from both files) ---
 export class GameSprite {
-    constructor(imageSrc, x, y, frameWidth, frameHeight, totalFrames, framesPerRow, animationSpeed, scale = 1, lifeTime = -1) {
-        this.image = new Image();
-        this.image.src = imageSrc;
-        this.x = x;
-        this.y = y;
+constructor(image, x, y, frameWidth, frameHeight, collisionWidth, collisionHeight, animationSpeed, scale = 1, lifeTime = -1) {
+        this.image = image; // This is now an already loaded Image object from imageAssets
+        this.x = x; // THIS IS THE TOP-LEFT OF THE COLLISION BOX
+        this.y = y; // THIS IS THE TOP-LEFT OF THE COLLISION BOX
+
+        // Dimensions for drawing (e.g., 16x16 from the sheet)
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
-        this.totalFrames = totalFrames;
-        this.framesPerRow = framesPerRow;
-        this.animationSpeed = animationSpeed;
+
+        // Dimensions for collision (e.g., 8x8 hitbox)
+        this.collisionWidth = collisionWidth;
+        this.collisionHeight = collisionHeight;
+
+        this.defaultAnimationSpeed = animationSpeed;
+
         this.scale = scale;
-        this.defaultAnimationSpeed = animationSpeed; // Store default speed
 
         this.currentFrame = 0;
         this.frameCounter = 0;
-        this.isLoaded = false;
+        this.isLoaded = true; // Assumed loaded if passed an Image object
 
-        this.vx = 0;
-        this.vy = 0;
+        this.vx = 0; this.vy = 0;
         this.currentRotation = 0;
         this.rotationSpeed = Math.PI / 20;
         this.rotationSmoothness = 0.15;
@@ -68,35 +116,40 @@ export class GameSprite {
         this.lifeTime = lifeTime;
         this.lifeRemaining = lifeTime;
         this.shouldRemove = false;
+        this.visible = true; // Control visibility of the sprite
 
-        this.animations = {}; // Stores animation configurations { 'idle': { start: 0, end: 4, speed: 7, loop: true }, ... }
-        this.currentAnimationState = ''; // e.g., 'idle', 'hitUp'
-        this.currentAnimationConfig = null; // The config object for the current state
-
-        this.image.onload = () => {
-            this.isLoaded = true;
-            // console.log(`Sprite loaded: ${imageSrc}`); // Optional: for debugging
-        };
-        this.image.onerror = () => {
-            console.error(`Error loading sprite: ${imageSrc}`);
-        };
+        this.animations = {}; // { 'stateName': { framesPerRow: N, start: 0, end: 4, speed: 7, loop: true, nextState: 'idle' } }
+        this.currentAnimationState = '';
+        this.currentAnimationConfig = null;
+    
     }
 
      setAnimation(state) {
-        if (this.currentAnimationState === state) {
-            return; // Animation is already playing
-        }
-        const config = this.animations[state];
+         const config = this.animations[state];
         if (!config) {
-            console.warn(`Animation state '${state}' not found for sprite.`);
+            console.warn(`Animation state '${state}' not found for sprite. Available: ${Object.keys(this.animations).join(', ')}`);
             return;
         }
 
+        // Only switch if different state OR if the animation is non-looping
+        if (this.currentAnimationState === state && !config.loop) {
+            return;
+        }
+
+        // Update animation config (frameWidth/Height are fixed for this sprite, so no need to update here)
+        // If a specific animation had a *different collision box*, you would update it here.
+        // E.g., `this.collisionWidth = config.collisionWidth || this.collisionWidth;`
         this.currentAnimationState = state;
         this.currentAnimationConfig = config;
         this.currentFrame = config.start; // Reset to the start frame of the new animation
         this.frameCounter = 0; // Reset frame counter
+        // IMPORTANT: framesPerRow is now dynamic per animation config, if you have varied layouts per animation type
+        // If your combined sheet has a fixed framesPerRow (e.g., 3 frames/row for all animations),
+        // then framesPerRow can be a fixed property of GameSprite.
+        // Assuming a fixed framesPerRow for the combined sheet:
+        this.framesPerRow = config.framesPerRow; // This property is part of the animation config now.
     }
+
 
     update() {
         // Update animation frame based on currentAnimationConfig
@@ -132,19 +185,21 @@ export class GameSprite {
         this.x += this.vx;
         this.y += this.vy;
 
-        // Canvas Boundary Checks (Barriers)
-        const scaledWidth = this.frameWidth * this.scale;
-        const scaledHeight = this.frameHeight * this.scale;
+         const scaledCollisionWidth = this.collisionWidth * this.scale;
+        const scaledCollisionHeight = this.collisionHeight * this.scale;
+
         if (this.x < 0) {
             this.x = 0; this.vx = 0;
-        } else if (this.x + scaledWidth > canvas.width) {
-            this.x = canvas.width - scaledWidth; this.vx = 0;
+        } else if (this.x + scaledCollisionWidth > canvas.width) {
+            this.x = canvas.width - scaledCollisionWidth; this.vx = 0;
         }
         if (this.y < 0) {
             this.y = 0; this.vy = 0;
-        } else if (this.y + scaledHeight > canvas.height) {
-            this.y = canvas.height - scaledHeight; this.vy = 0;
+        } else if (this.y + scaledCollisionHeight > canvas.height) {
+            this.y = canvas.height - scaledCollisionHeight; this.vy = 0;
         }
+
+
 
         // Lifetime Management
         if (this.lifeTime > 0) {
@@ -168,24 +223,49 @@ export class GameSprite {
 }
 
        draw(context) {
-        if (!this.isLoaded) return;
+        if (!this.isLoaded || !this.currentAnimationConfig || !this.visible) return;
 
-        const sx = (this.currentFrame % this.framesPerRow) * this.frameWidth;
-        const sy = Math.floor(this.currentFrame / this.framesPerRow) * this.frameHeight;
+        // Calculate source rectangle on the sprite sheet (always based on frame dimensions)
+        const sx = (this.currentFrame % this.currentAnimationConfig.framesPerRow) * this.frameWidth; // Use framesPerRow from current animation config
+        const sy = Math.floor(this.currentFrame / this.currentAnimationConfig.framesPerRow) * this.frameHeight;
+
+        // Calculate destination size on canvas (always based on frame dimensions and scale)
         const drawWidth = this.frameWidth * this.scale;
         const drawHeight = this.frameHeight * this.scale;
-        const centerX = this.x + drawWidth / 2;
-        const centerY = this.y + drawHeight / 2;
+
+        // --- CRITICAL CHANGE: Calculate drawing offset to center visual around collision box ---
+        // (x, y) is top-left of collision box.
+        // We want the visual to be centered over this collision box.
+        const scaledCollisionWidth = this.collisionWidth * this.scale;
+        const scaledCollisionHeight = this.collisionHeight * this.scale;
+
+        const offsetX = (drawWidth - scaledCollisionWidth) / 2; // Difference in width / 2
+        const offsetY = (drawHeight - scaledCollisionHeight) / 2; // Difference in height / 2
+
+        // Destination X, Y for drawing on canvas
+        // This means the visual sprite's top-left will be `this.x - offsetX`
+        const destX = this.x - offsetX;
+        const destY = this.y - offsetY;
+
+        // Calculate center for rotation (relative to the draw position)
+        const centerX = destX + drawWidth / 2;
+        const centerY = destY + drawHeight / 2;
+
 
         context.save();
         context.translate(centerX, centerY);
         context.rotate(this.currentRotation);
         context.drawImage(
             this.image,
-            sx, sy, this.frameWidth, this.frameHeight,
-            -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight
+            sx, sy, this.frameWidth, this.frameHeight, // Source rectangle
+            -drawWidth / 2, -drawHeight / 2, // Destination (relative to translated center)
+            drawWidth, drawHeight // Destination size
         );
         context.restore();
+
+        // Optional: Draw collision box for debugging
+        // context.strokeStyle = 'red';
+        // context.strokeRect(this.x, this.y, scaledCollisionWidth, scaledCollisionHeight);
     }
 }
 
@@ -193,6 +273,15 @@ import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerS
 import { IdleToaster, initializeToasterSprite, updateToasterMovement } from './Aaron.js'; // Import the GameSprite class from Aaron.js
 
 function gameLoop() {
+
+    // --- DEBUGGING: Check allGameSprites at the start of each loop ---
+    console.log("--- Game Loop Start ---");
+    console.log("allGameSprites count:", allGameSprites.length);
+    if (allGameSprites.length > 0) {
+        console.log("First sprite in array:", allGameSprites[0]);
+    }
+    // --- END DEBUGGING ---
+
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     // Update Player (Butterfly) Movement
@@ -228,7 +317,7 @@ function gameLoop() {
 }
 
 // --- Initial Loading Check & Game Start ---
-function checkAllSpritesLoaded() {
+function startGameAfterAssetsLoaded() {
     let allLoaded = true;
     for (let i = 0; i < allGameSprites.length; i++) {
         if (!allGameSprites[i].isLoaded) {
@@ -239,6 +328,18 @@ function checkAllSpritesLoaded() {
 
     if (allLoaded) {
         console.log("All sprites loaded! Starting game loop.");
+
+        console.log("--- Image Assets Inspection (Pre-Sprite Init) ---");
+    for (const key in imageAssets) {
+        const img = imageAssets[key];
+        if (img instanceof HTMLImageElement) {
+            console.log(`Key: '${key}', Image:`, img, ` (src: ${img.src}, complete: ${img.complete}, naturalWidth: ${img.naturalWidth}, naturalHeight: ${img.naturalHeight})`);
+        } else {
+            console.log(`Key: '${key}', Image:`, img, ` (NOT an HTMLImageElement, type: ${typeof img})`);
+        }
+    }
+    console.log("-----------------------------------------------");
+        
          if (!Butterfly) { // Ensure it's only initialized once
             initializePlayerSprite();
         }
@@ -274,85 +375,16 @@ document.addEventListener('keyup', (event) => {
 document.getElementById('startButton').addEventListener('click', () => {
     document.getElementById('charSelect').style.display = 'flex';
     document.getElementById('mainMenu').style.display = 'none';
-    checkAllSpritesLoaded(); // Start the game after assets load
 });
 
 document.getElementById('buttonStart').addEventListener('click', () => {
     document.getElementById('charSelect').style.display = 'none';
     document.getElementById('gameCanvas').style.display = 'flex';
-    checkAllSpritesLoaded(); // Start the game after assets load
-});
-
-
-
-// ... (Previous Event Listeners, etc.) ...
-
-/*
-// --- Game Loop (Consolidated from both files) ---
-function gameLoop() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-
-    // --- Update Butterfly Velocity based on Key State ---
-    IdleButterfly.vx = 0;
-    IdleButterfly.vy = 0;
-    if (keysPressed.ArrowLeft) {
-        IdleButterfly.vx = -BUTTERFLY_MOVE_SPEED;
-    } else if (keysPressed.ArrowRight) {
-        IdleButterfly.vx = BUTTERFLY_MOVE_SPEED;
-    }
-    if (keysPressed.ArrowUp) {
-        IdleButterfly.vy = -BUTTERFLY_MOVE_SPEED;
-    } else if (keysPressed.ArrowDown) {
-        IdleButterfly.vy = BUTTERFLY_MOVE_SPEED;
-    }
-
-    // --- Example: Update Second Character Velocity (if applicable) ---
-    // SecondCharacter.vx = 0;
-    // SecondCharacter.vy = 0;
-    // if (keysPressed.KeyW) { SecondCharacter.vy = -SOME_OTHER_SPEED; }
-    // ... etc.
-
-    // --- Decrement Tornado Cooldown Timer ---
-    if (tornadoCooldown > 0) {
-        tornadoCooldown--;
-    }
-
-     // Update and draw all sprites
-    for (let i = 0; i < allGameSprites.length; i++) {
-        const sprite = allGameSprites[i];
-        sprite.update();
-        sprite.draw(context);
-    }
-
-    // Remove sprites marked for removal
-    for (let i = allGameSprites.length - 1; i >= 0; i--) {
-        if (allGameSprites[i].shouldRemove) {
-            allGameSprites.splice(i, 1);
-        }
-    }
-
-    requestAnimationFrame(gameLoop);
-}
-
-// --- Initial Loading Check (Consolidated from both files) ---
-function checkAllSpritesLoaded() {
-    let allLoaded = true;
-    for (let i = 0; i < allGameSprites.length; i++) {
-        if (!allGameSprites[i].isLoaded) {
-            allLoaded = false;
-            break;
-        }
-    }
-
-    if (allLoaded) {
-        console.log("All sprites loaded! Starting game loop.");
-        gameLoop(); // Start the game loop only once all assets are ready
+    if (!window.gameStartedAndLoaded) {
+        console.log("Game start button clicked. Loading assets...");
+        loadAllImages(startGameAfterAssetsLoaded); // Pass the startup function as a callback
+        window.gameStartedAndLoaded = true; // Set flag
     } else {
-        setTimeout(checkAllSpritesLoaded, 100); // Check again in 100ms
+        console.log("Game already started/assets already loaded.");
     }
-} */
-
-
-
-// --- Initiate the loading check (at the very end of your main.js file) ---
-checkAllSpritesLoaded();
+});
