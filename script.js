@@ -265,7 +265,7 @@ export class GameSprite {
         context.restore();
 
         // Optional: Draw collision box for debugging
-         context.strokeStyle = 'red';
+         context.strokeStyle = 'white';
          context.strokeRect(this.x + this.hitboxOffsetX, this.y + this.hitboxOffsetY, scaledCollisionWidth, scaledCollisionHeight);
     }
 }
