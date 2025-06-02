@@ -3,8 +3,8 @@ import { GameSprite, addSprite, TOASTER_MOVE_SPEED, imageAssets} from './script.
 
 export let IdleToaster; // Declare it but don't initialize it yet
 const TOASTER_SPRITESHEET_KEY = 'IdleToaster'; // Key for imageAssets
-const TOASTER_FRAME_WIDTH = 16;
-const TOASTER_FRAME_HEIGHT = 16;
+const TOASTER_FRAME_WIDTH = 8;
+const TOASTER_FRAME_HEIGHT = 8;
 const TOASTER_COLLISION_WIDTH = 8;
 const TOASTER_COLLISION_HEIGHT = 8;
 const TOASTER_COMMON_FRAMES_PER_ROW = 6; // Adjust to your sheet
@@ -25,15 +25,15 @@ export function initializeToasterSprite() {
     console.log("Idletoaster initialized and added."); // Debug log
 
     // Define animation states for the toaster
-  /*  toaster.animations = {
-        'idle':      { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 0,  end: 4,  speed: IDLE_ANIMATION_SPEED, loop: true },
-        'hitRight':  { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+    IdleToaster.animations = {
+        'idle':      { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 0,  end: 0,  speed: IDLE_ANIMATION_SPEED, loop: true },
+   /*     'hitRight':  { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
         'hitLeft':   { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
         'hitUp':     { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-        'hitDown':   { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }
+        'hitDown':   { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }*/
         // Adjust frame numbers and speed based on your actual sprite sheet layout
     };
-*/
+
     IdleToaster.setAnimation('idle'); // Set initial animation state
     IdleToaster.lastDirection = 'right'; // Track last facing direction
 }

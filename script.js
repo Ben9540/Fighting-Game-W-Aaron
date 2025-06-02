@@ -8,7 +8,7 @@ export const TORNADO_COOLDOWN_DURATION = 150;
 export const HIT_COOLDOWN_DURATION = 60; // Cooldown for hit animation (e.g., 1 second)
 let tornadoCooldown = 0;
 let hitCooldown = 0; // Cooldown variable for hit animation
-export const TOASTER_MOVE_SPEED = 0.5;
+export const TOASTER_MOVE_SPEED = 2;
 
 // ===============================
 // 2. CANVAS SETUP
@@ -52,7 +52,7 @@ export const imageAssets = {};
 const IMAGE_PATHS = {
     Butterfly: 'Bens Sprites/Butterfly.png', // New combined 16x16 sheet
     tornado: 'Bens Sprites/Tornado.png',
-    toaster: 'Aarons Sprites/Toaster.png'
+    IdleToaster: 'Aarons Sprites/Toaster.png'
 };
 
 // Loads all images and calls callback when done
