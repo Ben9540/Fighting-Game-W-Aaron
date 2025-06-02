@@ -54,7 +54,7 @@ export function updateToasterMovement(toasterSprite, keys) {
 
     // Prioritize horizontal for rotation, but track vertical for hit animation
     if (keys.w) {
-        toasterSprite.vy = -TOASTER_MOVE_SPEED;
+        jump()
         if (!keys.a && !keys.d) toasterSprite.lastDirection = 'up';
     } 
 
@@ -88,6 +88,12 @@ export function updateToasterMovement(toasterSprite, keys) {
         // Then set the next state (usually 'idle')
         toasterSprite.setAnimation(toasterSprite.currentAnimationConfig.nextState || 'idle');
     }
+}
+
+
+
+function jump(){
+    
 }
 
 /*while (health>=0) {
