@@ -57,7 +57,8 @@ const IMAGE_PATHS = {
     tornado: 'Bens Sprites/Tornado.png',
     IdleToaster: 'Aarons Sprites/Toaster.png',
     ground: 'Ground.png',
-    toastimg: 'Bread.png'
+    toastimg: 'Bread.png',
+    background: 'bg.png'
 };
 
 // Loads all images and calls callback when done
@@ -288,9 +289,16 @@ import { IdleToaster, initializeToasterSprite, updateToasterMovement, toastSpeci
 function gameLoop() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    context.fillStyle = '#87CEEB'; // Sky blue
+   if (imageAssets.background && imageAssets.background.complete) {
+    context.drawImage(
+        imageAssets.background,
+        0, 0,                       // Destination x, y
+        canvas.width, canvas.height // Destination width, height (fills canvas)
+    );
+} else {
+    context.fillStyle = '#000';
     context.fillRect(0, 0, canvas.width, canvas.height);
-
+}
     // --- NEW: 3. Draw Ground Tiles ---
     const GROUND_TILE_WIDTH = 8;  // Your ground tile's width
     const GROUND_TILE_HEIGHT = 16; // Your ground tile's height
