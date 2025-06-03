@@ -14,7 +14,7 @@ export function initializeToasterSprite() {
     // Only create the toaster when this function is called
     IdleToaster = new GameSprite(
         imageAssets[TOASTER_SPRITESHEET_KEY], // Use the pre-loaded combined image
-        200, 100, // Initial x, y (top-left of the 8x8 collision box)
+        50, 225, // Initial x, y (top-left of the 8x8 collision box)
         TOASTER_FRAME_WIDTH, TOASTER_FRAME_HEIGHT, // Visual frame dimensions (16x16)
         TOASTER_COLLISION_WIDTH, TOASTER_COLLISION_HEIGHT, // Collision box dimensions (8x8)
         IDLE_ANIMATION_SPEED, // Default animation speed (used if no animation config is set)
@@ -54,7 +54,9 @@ export function updateToasterMovement(toasterSprite, keys) {
 
     // Prioritize horizontal for rotation, but track vertical for hit animation
     if (keys.w) {
-        jump()
+        if (jumpActive == false) {
+                  jump()  
+        }
         if (!keys.a && !keys.d) toasterSprite.lastDirection = 'up';
     } 
 
@@ -90,10 +92,28 @@ export function updateToasterMovement(toasterSprite, keys) {
     }
 }
 
+let jumpActive = false;
+let jumpDuration = 0;
 
+function sleep(ms){
+    return new Promise(resolve => setTimeout(resolve,ms))
+}
 
-function jump(){
-    
+async function jump(){
+    jumpActive = true;
+    jumpDuration = 2;
+    const totalFrames = 30;
+    const jumpHeight = 60;
+    const frameDelay = 16;
+    for (let i = 0; i < totalFrames; i++) {
+        IdleToaster.y -= jumpHeight / totalFrames;
+        await sleep(frameDelay);
+    }
+    for (let i = 0; i < totalFrames; i++){
+        IdleToaster.y += jumpHeight / totalFrames;
+        await sleep(frameDelay)
+    }
+    jumpActive = false
 }
 
 /*while (health>=0) {
