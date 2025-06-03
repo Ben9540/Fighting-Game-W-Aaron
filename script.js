@@ -299,7 +299,7 @@ function gameLoop() {
     context.fillStyle = '#000';
     context.fillRect(0, 0, canvas.width, canvas.height);
 }
-oo9    // --- NEW: 3. Draw Ground Tiles ---
+    // --- NEW: 3. Draw Ground Tiles ---
     const GROUND_TILE_WIDTH = 8;  // Your ground tile's width
     const GROUND_TILE_HEIGHT = 16; // Your ground tile's height
 
