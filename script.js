@@ -56,7 +56,8 @@ const IMAGE_PATHS = {
     Butterfly: 'Bens Sprites/Butterfly.png', // New combined 16x16 sheet
     tornado: 'Bens Sprites/Tornado.png',
     IdleToaster: 'Aarons Sprites/Toaster.png',
-    ground: 'Ground.png'
+    ground: 'Ground.png',
+    toastimg: 'Bread.png'
 };
 
 // Loads all images and calls callback when done
@@ -279,7 +280,7 @@ export class GameSprite {
 // ===============================
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack } from './Ben2.js';
-import { IdleToaster, initializeToasterSprite, updateToasterMovement } from './Aaron.js';
+import { IdleToaster, initializeToasterSprite, updateToasterMovement, toastSpecial } from './Aaron.js';
 
 // ===============================
 // 8. GAME LOOP

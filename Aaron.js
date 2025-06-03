@@ -94,6 +94,7 @@ export function updateToasterMovement(toasterSprite, keys) {
 
  if (keys.i) {
 //special
+toastSpecial()
 }
 if (keys.o) {
 //block
@@ -126,6 +127,24 @@ async function jump(){
         await sleep(frameDelay)
     }
     jumpActive = false
+}
+
+let toastCharge = 1 ;
+let toastAllow = true;
+
+export function toastSpecial(){
+    if(toastAllow == true){
+        if(toastCharge == 1){
+            sleep(1000)
+            toastCharge ++;
+        }
+    
+        const toast = new GameSprite(
+            imageAssets[toastimg],
+    
+            addSprite(toast)
+        )
+    }
 }
 
 /*while (health>=0) {
