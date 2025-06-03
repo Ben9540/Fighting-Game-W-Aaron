@@ -287,6 +287,35 @@ import { IdleToaster, initializeToasterSprite, updateToasterMovement } from './A
 function gameLoop() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
+    context.fillStyle = '#87CEEB'; // Sky blue
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    // --- NEW: 3. Draw Ground Tiles ---
+    const GROUND_TILE_WIDTH = 8;  // Your ground tile's width
+    const GROUND_TILE_HEIGHT = 16; // Your ground tile's height
+
+    // Calculate the Y position for the bottom of the canvas
+    const GROUND_START_Y = canvas.height - GROUND_TILE_HEIGHT;
+
+    if (imageAssets.ground && imageAssets.ground.complete) { // Ensure image is loaded
+        // Calculate how many tiles are needed to cover the canvas width
+        const numTilesX = Math.ceil(canvas.width / GROUND_TILE_WIDTH);
+
+        for (let i = 0; i < numTilesX; i++) {
+            context.drawImage(
+                imageAssets.ground,
+                i * GROUND_TILE_WIDTH, // X position for this tile
+                GROUND_START_Y,        // Y position: fixed at the bottom
+                GROUND_TILE_WIDTH,
+                GROUND_TILE_HEIGHT
+            );
+        }
+    } else {
+        // Optional: Log if ground tile isn't loaded yet
+        // console.warn("Ground tile image not loaded yet.");
+    }
+
+
     // Update player and toaster movement
     updatePlayerMovement(Butterfly, keysPressed);
     updateToasterMovement(IdleToaster, keysPressed);
