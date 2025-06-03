@@ -14,7 +14,7 @@ export function initializeToasterSprite() {
     // Only create the toaster when this function is called
     IdleToaster = new GameSprite(
         imageAssets[TOASTER_SPRITESHEET_KEY], // Use the pre-loaded combined image
-        50, 225, // Initial x, y (top-left of the 8x8 collision box)
+        50, 235, // Initial x, y (top-left of the 8x8 collision box)
         TOASTER_FRAME_WIDTH, TOASTER_FRAME_HEIGHT, // Visual frame dimensions (16x16)
         TOASTER_COLLISION_WIDTH, TOASTER_COLLISION_HEIGHT, // Collision box dimensions (8x8)
         IDLE_ANIMATION_SPEED, // Default animation speed (used if no animation config is set)
@@ -122,7 +122,7 @@ async function jump(){
         IdleToaster.y -= jumpHeight / totalFrames;
         await sleep(frameDelay);
     }
-    for (let i = 0; i < totalFrames && IdleToaster.y < 225; i++){
+    for (let i = 0; i < totalFrames && IdleToaster.y < 235; i++){
         IdleToaster.y += (jumpHeight / totalFrames)*1.18;
         await sleep(frameDelay)
     }
