@@ -90,6 +90,18 @@ export function updateToasterMovement(toasterSprite, keys) {
         // Then set the next state (usually 'idle')
         toasterSprite.setAnimation(toasterSprite.currentAnimationConfig.nextState || 'idle');
     }
+
+
+ if (keys.i) {
+//special
+}
+if (keys.o) {
+//block
+}
+if (keys.p) {
+//basic
+}
+
 }
 
 let jumpActive = false;
@@ -102,15 +114,15 @@ function sleep(ms){
 async function jump(){
     jumpActive = true;
     jumpDuration = 2;
-    const totalFrames = 30;
+    const totalFrames = 20;
     const jumpHeight = 60;
     const frameDelay = 16;
     for (let i = 0; i < totalFrames; i++) {
         IdleToaster.y -= jumpHeight / totalFrames;
         await sleep(frameDelay);
     }
-    for (let i = 0; i < totalFrames; i++){
-        IdleToaster.y += jumpHeight / totalFrames;
+    for (let i = 0; i < totalFrames && IdleToaster.y < 225; i++){
+        IdleToaster.y += (jumpHeight / totalFrames)*1.18;
         await sleep(frameDelay)
     }
     jumpActive = false

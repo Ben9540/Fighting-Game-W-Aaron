@@ -42,7 +42,10 @@ export const keysPressed = {
     w: false, // For Toaster movement
     a: false, // For Toaster movement
     s: false, // For Toaster movement
-    d: false  // For Toaster movement
+    d: false,  // For Toaster movement
+    i: false,
+    o: false,
+    p: false
 };
 
 // ===============================
