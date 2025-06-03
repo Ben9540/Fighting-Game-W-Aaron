@@ -55,7 +55,8 @@ export const imageAssets = {};
 const IMAGE_PATHS = {
     Butterfly: 'Bens Sprites/Butterfly.png', // New combined 16x16 sheet
     tornado: 'Bens Sprites/Tornado.png',
-    IdleToaster: 'Aarons Sprites/Toaster.png'
+    IdleToaster: 'Aarons Sprites/Toaster.png',
+    ground: 'Ground.png'
 };
 
 // Loads all images and calls callback when done
