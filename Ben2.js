@@ -30,7 +30,7 @@ const BUTTERFLY_COLLISION_HEIGHT = 8;
 const BUTTERFLY_COMMON_FRAMES_PER_ROW = 6; // Adjust to your sheet
 const IDLE_ANIMATION_SPEED = 10;
 const HIT_ANIMATION_SPEED = 5;
-const BUTTERFLY_HIT_DAMAGE = 15; // Damage dealt by Butterfly's hit attack (new)
+export const BUTTERFLY_HIT_DAMAGE = 15; // Damage dealt by Butterfly's hit attack (new)
 
 // ===============================
 // 2. SPRITE INITIALIZATION

@@ -163,7 +163,7 @@ export class GameSprite {
     // --- NEW: Method to take damage ---
     takeDamage(amount) {
         if (this.invincibilityFrames > 0) {
-            console.log(`${this.constructor.name} is invincible.`);
+            // console.log(`${this.constructor.name} is invincible.`); // Commented to reduce log spam
             return; // Cannot take damage if invincible
         }
 
@@ -208,6 +208,9 @@ export class GameSprite {
                     if (this.currentAnimationConfig.loop) {
                         this.currentFrame = this.currentAnimationConfig.start;
                     } else {
+                        // If it's a non-looping animation that just finished,
+                        // trigger any 'onAnimationEnd' logic if applicable.
+                        // The 'nextState' handling is done in updatePlayerMovement/ToasterMovement
                         this.currentFrame = this.currentAnimationConfig.end;
                     }
                 }
@@ -215,7 +218,8 @@ export class GameSprite {
         } else {
             this.frameCounter++;
             if (this.frameCounter >= this.defaultAnimationSpeed) {
-                this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+                // This path might be less used if you always set an animation state
+                this.currentFrame = (this.currentFrame + 1) % this.totalFrames; // Assuming totalFrames is defined if no config
                 this.frameCounter = 0;
             }
         }
@@ -256,19 +260,9 @@ export class GameSprite {
         }
 
         // --- Rotation update (for Butterfly) ---
-        // This 'if (this === Butterfly)' logic might be better placed in Butterfly's specific update logic
-        // or a method overridden by Butterfly if you have more complex inheritance.
-        // For now, it remains here as it was in your original code.
-        if (this === Butterfly) {
-            let desiredRotation = 0;
-            const tiltAngle = this.rotationSpeed;
-            if (this.vx > 0) {
-                desiredRotation = tiltAngle;
-            } else if (this.vx < 0) {
-                desiredRotation = -tiltAngle;
-            }
-            this.currentRotation = this.currentRotation * (1 - this.rotationSmoothness) + desiredRotation * this.rotationSmoothness;
-        }
+        // Moved this specific logic to Ben2.js's updatePlayerMovement
+        // as it's specific to Butterfly and tightly coupled with its movement.
+        // Keeping it here means any sprite can rotate, which might not be desired.
     }
 
     // Draw the sprite on the canvas
@@ -308,6 +302,7 @@ export class GameSprite {
 
         // Optional: Draw collision box for debugging
         context.strokeStyle = 'white';
+        // Draw the collision box adjusted for offsets
         context.strokeRect(this.x + this.hitboxOffsetX, this.y + this.hitboxOffsetY, scaledCollisionWidth, scaledCollisionHeight);
     }
 
@@ -333,6 +328,9 @@ export class GameSprite {
  * @returns {boolean} True if collision, false otherwise.
  */
 export function checkCollision(spriteA, spriteB) {
+    // If either sprite is not visible (e.g., during invincibility flash), no collision
+    if (!spriteA.visible || !spriteB.visible) return false;
+
     // Get the collision boxes including any offsets
     const boxA = spriteA.getCollisionBox();
     const boxB = spriteB.getCollisionBox();
@@ -350,7 +348,7 @@ export function checkCollision(spriteA, spriteB) {
  * @param {GameSprite} spriteA - The sprite to move.
  * @param {GameSprite} spriteB - The sprite that spriteA is colliding with.
  */
-function resolveCollision(spriteA, spriteB) {
+export function resolveCollision(spriteA, spriteB) {
     const boxA = spriteA.getCollisionBox();
     const boxB = spriteB.getCollisionBox();
 
@@ -358,7 +356,8 @@ function resolveCollision(spriteA, spriteB) {
     const overlapX = Math.max(0, Math.min(boxA.x + boxA.width, boxB.x + boxB.width) - Math.max(boxA.x, boxB.x));
     const overlapY = Math.max(0, Math.min(boxA.y + boxA.height, boxB.y + boxB.height) - Math.max(boxA.y, boxB.y));
 
-    if (overlapX === 0 || overlapY === 0) return; // No overlap
+    // No overlap or if the sprites are "inside" each other perfectly, no resolution needed
+    if (overlapX === 0 || overlapY === 0) return;
 
     // Determine which axis has the smallest overlap (this is the axis of least resistance)
     if (overlapX < overlapY) {
@@ -385,7 +384,7 @@ function resolveCollision(spriteA, spriteB) {
 // 8. MODULE IMPORTS
 // ===============================
 // Import player and toaster logic from other modules
-import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack } from './Ben2.js';
+import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE } from './Ben2.js';
 import { IdleToaster, initializeToasterSprite, updateToasterMovement, toastSpecial } from './Aaron.js';
 
 // ===============================
@@ -404,7 +403,7 @@ function gameLoop() {
         context.fillStyle = '#000';
         context.fillRect(0, 0, canvas.width, canvas.height);
     }
-    // --- NEW: 3. Draw Ground Tiles ---
+    // --- Draw Ground Tiles ---
     const GROUND_TILE_WIDTH = 8;  // Your ground tile's width
     const GROUND_TILE_HEIGHT = 32; // Your ground tile's height
 
@@ -451,41 +450,94 @@ function gameLoop() {
     allGameSprites.length = 0;
     allGameSprites.push(...spritesToKeep);
 
-    // --- NEW: Handle Character-to-Character Collision ---
-    if (Butterfly && IdleToaster && checkCollision(Butterfly, IdleToaster)) {
-        // Simple collision resolution: prevent overlapping
-        // You might want to push both characters away, or only one.
-        // For simplicity, let's say the Butterfly pushes the Toaster.
-        // Or, better, if they both try to move into each other, they stop.
-        // A more robust approach would resolve based on movement vectors.
-        // For now, let's just resolve by separating them
-        resolveCollision(Butterfly, IdleToaster);
-        resolveCollision(IdleToaster, Butterfly); // Resolve from both sides to ensure proper separation
-        console.log("Collision between Butterfly and Toaster!");
-    }
 
-
-    // --- NEW: Handle Butterfly Hit Attack Collision (Butterfly's hitbox vs Toaster) ---
-    // This needs to be checked when the Butterfly is in a 'hit' animation state
-    // and its hitbox offset is active.
-    if (Butterfly && IdleToaster &&
-        Butterfly.currentAnimationState.startsWith('hit') &&
-        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0)) { // Check if hitbox is extended
+    // --- Handle Character-to-Character Collision ---
+    if (Butterfly && IdleToaster) {
         if (checkCollision(Butterfly, IdleToaster)) {
-            console.log("Butterfly's hit attack collided with Toaster!");
-            // Apply damage to the Toaster (Toaster's health will be added later in aaron.js)
-            // For now, let's just log and provide a placeholder for damage.
-            // When Toaster has health, you'd call IdleToaster.takeDamage(damageAmount);
-            // Example:
-            // if (IdleToaster.takeDamage) {
-            //     IdleToaster.takeDamage(10); // Example damage amount
-            // }
+            // Resolve collision so they don't overlap
+            resolveCollision(Butterfly, IdleToaster);
+            resolveCollision(IdleToaster, Butterfly); // Resolve from both sides for robust separation
+            // console.log("Collision between Butterfly and Toaster!"); // Commented to reduce log spam
         }
     }
+
+    // --- Handle Butterfly Hit Attack Collision (Butterfly's hitbox vs Toaster) ---
+    if (Butterfly && IdleToaster &&
+        Butterfly.currentAnimationState.startsWith('hit') &&
+        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0) && // Check if hitbox is extended
+        checkCollision(Butterfly, IdleToaster)) {
+        // Apply damage to the Toaster
+        if (IdleToaster.takeDamage) { // Check if Toaster has the takeDamage method
+            IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE); // Use the damage constant from Ben2.js
+        }
+    }
+
+    // --- Handle Tornado Projectile Collision ---
+    // Iterate through all active sprites to find tornadoes and check their collision
+    // against characters.
+    if (Butterfly && IdleToaster) {
+        for (let i = 0; i < allGameSprites.length; i++) {
+            const sprite = allGameSprites[i];
+            // Check if the sprite is a tornado (you might add a 'type' property to GameSprite)
+            // For now, let's assume if it uses the tornado image it's a tornado projectile.
+            if (sprite.image === imageAssets.tornado) {
+                // Tornado vs Butterfly
+                if (sprite !== Butterfly && checkCollision(sprite, Butterfly)) { // Ensure tornado doesn't collide with itself
+                    console.log("Tornado collided with Butterfly!");
+                    // If the tornado is meant to damage the Butterfly:
+                    Butterfly.takeDamage(5); // Example damage from tornado
+                    sprite.shouldRemove = true; // Tornado dissipates on hit
+                    resolveCollision(Butterfly, sprite); // Push Butterfly away
+                }
+                // Tornado vs Toaster
+                if (sprite !== IdleToaster && checkCollision(sprite, IdleToaster)) { // Ensure tornado doesn't collide with itself
+                    console.log("Tornado collided with Toaster!");
+                    // If the tornado is meant to damage the Toaster:
+                    if (IdleToaster.takeDamage) {
+                        IdleToaster.takeDamage(5); // Example damage from tornado
+                    }
+                    sprite.shouldRemove = true; // Tornado dissipates on hit
+                    resolveCollision(IdleToaster, sprite); // Push Toaster away
+                }
+            }
+        }
+    }
+
+    // --- Draw Health Bar for Butterfly (NEW) ---
+    if (Butterfly) {
+        drawHealthBar(context, Butterfly);
+    }
+    // You'd add a similar block for IdleToaster when you implement its health and damage
+    // if (IdleToaster) {
+    //     drawHealthBar(context, IdleToaster);
+    // }
 
 
     requestAnimationFrame(gameLoop);
 }
+
+// --- Health Bar Drawing Function (NEW) ---
+function drawHealthBar(ctx, sprite) {
+    const barWidth = sprite.collisionWidth * sprite.scale * 1.5; // Health bar wider than sprite
+    const barHeight = 4;
+    const barX = sprite.x + sprite.hitboxOffsetX + (sprite.collisionWidth * sprite.scale / 2) - (barWidth / 2);
+    const barY = sprite.y + sprite.hitboxOffsetY - barHeight - 5; // 5 pixels above the sprite
+
+    // Draw background (empty) part of health bar
+    ctx.fillStyle = 'red';
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // Draw foreground (current health) part of health bar
+    const currentHealthWidth = (sprite.health / sprite.maxHealth) * barWidth;
+    ctx.fillStyle = 'lime';
+    ctx.fillRect(barX, barY, currentHealthWidth, barHeight);
+
+    // Optional: Draw border
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+}
+
 
 // ===============================
 // 10. SPRITE LOADING & GAME START
@@ -500,7 +552,7 @@ function startGameAfterAssetsLoaded() {
     }
 
     if (allLoaded) {
-        console.log("All sprites loaded! Starting game loop.");
+        console.log("All images loaded! Starting game loop.");
 
         // Debug: Inspect loaded image assets
         console.log("--- Image Assets Inspection (Pre-Sprite Init) ---");
@@ -523,7 +575,7 @@ function startGameAfterAssetsLoaded() {
         }
         gameLoop();
     } else {
-        // Changed to checkAllSpritesLoaded to be consistent with usage
+        // Changed to call itself to re-check asset loading status
         setTimeout(startGameAfterAssetsLoaded, 100);
     }
 }

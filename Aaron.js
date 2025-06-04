@@ -10,6 +10,7 @@ const TOASTER_COLLISION_HEIGHT = 8;
 const TOASTER_COMMON_FRAMES_PER_ROW = 6; // Adjust to your sheet
 const IDLE_ANIMATION_SPEED = 10;
 const HIT_ANIMATION_SPEED = 5;
+
 export function initializeToasterSprite() {
     // Only create the toaster when this function is called
     IdleToaster = new GameSprite(
@@ -21,16 +22,20 @@ export function initializeToasterSprite() {
         4.5 // scale
         // lifeTime defaults to -1
     );
+    // You can set Toaster's specific health here if you want it different from GameSprite default
+    // IdleToaster.maxHealth = 100;
+    // IdleToaster.health = IdleToaster.maxHealth;
+
     addSprite(IdleToaster); // Add it to the main sprite array
     console.log("Idletoaster initialized and added."); // Debug log
 
     // Define animation states for the toaster
     IdleToaster.animations = {
         'idle':      { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 0,  end: 0,  speed: IDLE_ANIMATION_SPEED, loop: true },
-   /*     'hitRight':  { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-        'hitLeft':   { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-        'hitUp':     { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-        'hitDown':   { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }*/
+    /* 'hitRight':  { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+          'hitLeft':   { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+          'hitUp':     { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+          'hitDown':   { framesPerRow: toaster_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }*/
         // Adjust frame numbers and speed based on your actual sprite sheet layout
     };
 
@@ -55,25 +60,20 @@ export function updateToasterMovement(toasterSprite, keys) {
     // Prioritize horizontal for rotation, but track vertical for hit animation
     if (keys.w) {
         if (jumpActive == false) {
-                  jump()  
+                    jump()
         }
         if (!keys.a && !keys.d) toasterSprite.lastDirection = 'up';
-    } 
-
-    // DEBUG: Log the current state for movement/animation decisions
-    console.log(`toaster Update: vx=${toasterSprite.vx}, vy=${toasterSprite.vy}, currentState=${toasterSprite.currentAnimationState}`);
+    }
 
     // If not moving, ensure idle animation is playing (unless an attack is active)
     if (toasterSprite.vx === 0 && toasterSprite.vy === 0 && !toasterSprite.currentAnimationState.startsWith('hit')) {
         if (toasterSprite.currentAnimationState !== 'idle') {
-            console.log("DEBUG: toaster setting animation to 'idle' (not moving, not hitting).");
             toasterSprite.setAnimation('idle');
         }
     } else if (toasterSprite.vx !== 0 || toasterSprite.vy !== 0) {
         // If moving, ensure idle animation is playing (unless an attack is active)
         if (!toasterSprite.currentAnimationState.startsWith('hit')) {
             if (toasterSprite.currentAnimationState !== 'idle') {
-                console.log("DEBUG: toaster setting animation to 'idle' (moving, not hitting).");
                 toasterSprite.setAnimation('idle');
             }
         }
@@ -82,26 +82,25 @@ export function updateToasterMovement(toasterSprite, keys) {
     // Check if a non-looping animation has finished and revert to idle
     if (toasterSprite.currentAnimationConfig && !toasterSprite.currentAnimationConfig.loop &&
         toasterSprite.currentFrame >= toasterSprite.currentAnimationConfig.end) { // Use >= for robustness
-        // --- NEW: If the finished animation was a 'hit' attack, reset the hitbox offset ---
+        // If the finished animation was a 'hit' attack, reset the hitbox offset
         if (toasterSprite.currentAnimationState.startsWith('hit')) {
             toasterSprite.resetHitboxOffset();
-            console.log("DEBUG: Hit animation finished, resetting hitbox offset.");
         }
         // Then set the next state (usually 'idle')
         toasterSprite.setAnimation(toasterSprite.currentAnimationConfig.nextState || 'idle');
     }
 
 
- if (keys.i) {
-//special
-toastSpecial()
-}
-if (keys.o) {
-//block
-}
-if (keys.p) {
-//basic
-}
+    if (keys.i) {
+    //special
+    toastSpecial()
+    }
+    if (keys.o) {
+    //block
+    }
+    if (keys.p) {
+    //basic
+    }
 
 }
 
@@ -129,41 +128,35 @@ async function jump(){
     jumpActive = false
 }
 
-export async function toastSpecial() {
-    if (toastAllow) {
-        if (toastCharge < 3 && keysPressed.i) {
-            toastAllow = false; // Disable toast special during charging
+let toastCharge = 1 ;
+let toastAllow = true;
 
-            // Delay the charge increment with async wait
-            await sleep(1000);
-            toastCharge++;
-
-            console.log(`Toast Charge: ${toastCharge}`);
-
-            if (toastCharge === 3) {
-                console.log("Max Toast Charge reached!");
-            }
-
-            // Reset toastAllow for next special
-            toastAllow = true;
-        } else {
-            console.log("Toast Special is on cooldown or max charge reached!");
+export function toastSpecial(){
+    if(toastAllow == true){
+        if(toastCharge == 1){
+            sleep(1000)
+            toastCharge ++;
         }
-    }
 
-    // Create toast sprite only when the charge is high enough
-    if (toastCharge === 3 && keysPressed.i) {
         const toast = new GameSprite(
-            imageAssets['Bread.png'],  // Correctly access the toast image
-            50, 150,  // Position (adjust as needed)
-            16, 16,   // Size (adjust based on sprite sheet)
-            16, 16,   // Collision box (adjust as needed)
-            10,       // Animation speed (adjust as needed)
-            1.5       // Scale (adjust as needed)
+            imageAssets.toastimg, // Corrected to use imageAssets[key]
+            IdleToaster.x + (IdleToaster.collisionWidth * IdleToaster.scale) / 2, // Start at Toaster's center X
+            IdleToaster.y, // Start at Toaster's Y
+            8, 8, // Assuming toastimg is 8x8 frames
+            8, 8,
+            5, // Animation speed
+            IdleToaster.scale, // Use Toaster's scale
+            60 // Lifetime frames for toast projectile
         );
+        toast.vx = IdleToaster.lastDirection === 'right' ? 3 : -3; // Launch horizontally
+        toast.vy = 0; // No vertical initial velocity
+
+        toast.animations = {
+            'default': { framesPerRow: 1, start: 0, end: 0, speed: 1, loop: true } // Assuming it's a single frame toast
+        };
+        toast.setAnimation('default');
 
         addSprite(toast);
-        toast.setAnimation('idle'); // Set default animation state (if applicable)
     }
 }
 
