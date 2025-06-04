@@ -129,21 +129,41 @@ async function jump(){
     jumpActive = false
 }
 
-let toastCharge = 1 ;
-let toastAllow = true;
+export async function toastSpecial() {
+    if (toastAllow) {
+        if (toastCharge < 3 && keysPressed.i) {
+            toastAllow = false; // Disable toast special during charging
 
-export function toastSpecial(){
-    if(toastAllow == true){
-        if(toastCharge == 1){
-            sleep(1000)
-            toastCharge ++;
+            // Delay the charge increment with async wait
+            await sleep(1000);
+            toastCharge++;
+
+            console.log(`Toast Charge: ${toastCharge}`);
+
+            if (toastCharge === 3) {
+                console.log("Max Toast Charge reached!");
+            }
+
+            // Reset toastAllow for next special
+            toastAllow = true;
+        } else {
+            console.log("Toast Special is on cooldown or max charge reached!");
         }
-    
+    }
+
+    // Create toast sprite only when the charge is high enough
+    if (toastCharge === 3 && keysPressed.i) {
         const toast = new GameSprite(
-            imageAssets[toastimg],
-    
-            addSprite(toast)
-        )
+            imageAssets['Bread.png'],  // Correctly access the toast image
+            50, 150,  // Position (adjust as needed)
+            16, 16,   // Size (adjust based on sprite sheet)
+            16, 16,   // Collision box (adjust as needed)
+            10,       // Animation speed (adjust as needed)
+            1.5       // Scale (adjust as needed)
+        );
+
+        addSprite(toast);
+        toast.setAnimation('idle'); // Set default animation state (if applicable)
     }
 }
 
