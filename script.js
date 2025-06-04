@@ -57,7 +57,7 @@ const IMAGE_PATHS = {
     tornado: 'Bens Sprites/Tornado.png',
     IdleToaster: 'Aarons Sprites/Toaster.png',
     ground: 'Ground.png',
-    toastimg: 'Bread.png',
+    toastimg: 'Aarons Sprites/Bread.png',
     background: 'bg.png'
 };
 
