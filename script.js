@@ -3,7 +3,7 @@
 // ===============================
 export const BUTTERFLY_MOVE_SPEED = 1;
 export const TORNADO_PROJECTILE_SPEED = 3;
-export const TORNADO_LIFETIME_FRAMES = 150;
+export const TORNADO_LIFETIME_FRAMES = 150; 
 export const TORNADO_COOLDOWN_DURATION = 150;
 export const HIT_COOLDOWN_DURATION = 60; // Cooldown for hit animation (e.g., 1 second)
 let tornadoCooldown = 0;
@@ -140,15 +140,9 @@ export class GameSprite {
 
         this.hitboxOffsetX = 0;
         this.hitboxOffsetY = 0;
-
-        // Health and Damage properties (new)
-        this.maxHealth = 100; // Default max health
-        this.health = this.maxHealth; // Current health
-        this.invincibilityFrames = 0; // Frames sprite is invincible after taking damage
-        this.invincibilityDuration = 30; // 0.5 seconds at 60 FPS
     }
 
-    // --- NEW: Method to set hitbox offset ---
+      // --- NEW: Method to set hitbox offset ---
     setHitboxOffset(offsetX, offsetY) {
         this.hitboxOffsetX = offsetX;
         this.hitboxOffsetY = offsetY;
@@ -158,25 +152,6 @@ export class GameSprite {
     resetHitboxOffset() {
         this.hitboxOffsetX = 0;
         this.hitboxOffsetY = 0;
-    }
-
-    // --- NEW: Method to take damage ---
-    takeDamage(amount) {
-        if (this.invincibilityFrames > 0) {
-            console.log(`${this.constructor.name} is invincible.`);
-            return; // Cannot take damage if invincible
-        }
-
-        this.health -= amount;
-        this.invincibilityFrames = this.invincibilityDuration; // Start invincibility
-
-        console.log(`${this.constructor.name} took ${amount} damage. Health: ${this.health}`);
-
-        if (this.health <= 0) {
-            this.health = 0;
-            this.shouldRemove = true; // Mark for removal or handle death state
-            console.log(`${this.constructor.name} defeated!`);
-        }
     }
 
     // Set the current animation state
@@ -220,14 +195,6 @@ export class GameSprite {
             }
         }
 
-        // --- Invincibility frames update (new) ---
-        if (this.invincibilityFrames > 0) {
-            this.invincibilityFrames--;
-            this.visible = !this.visible; // Flash effect
-        } else {
-            this.visible = true; // Ensure visible when not invincible
-        }
-
         // --- Position update ---
         this.x += this.vx;
         this.y += this.vy;
@@ -256,9 +223,6 @@ export class GameSprite {
         }
 
         // --- Rotation update (for Butterfly) ---
-        // This 'if (this === Butterfly)' logic might be better placed in Butterfly's specific update logic
-        // or a method overridden by Butterfly if you have more complex inheritance.
-        // For now, it remains here as it was in your original code.
         if (this === Butterfly) {
             let desiredRotation = 0;
             const tiltAngle = this.rotationSpeed;
@@ -307,103 +271,34 @@ export class GameSprite {
         context.restore();
 
         // Optional: Draw collision box for debugging
-        context.strokeStyle = 'white';
-        context.strokeRect(this.x + this.hitboxOffsetX, this.y + this.hitboxOffsetY, scaledCollisionWidth, scaledCollisionHeight);
-    }
-
-    // --- NEW: Method to get the actual collision bounding box ---
-    getCollisionBox() {
-        return {
-            x: this.x + this.hitboxOffsetX,
-            y: this.y + this.hitboxOffsetY,
-            width: this.collisionWidth * this.scale,
-            height: this.collisionHeight * this.scale
-        };
+         context.strokeStyle = 'white';
+         context.strokeRect(this.x + this.hitboxOffsetX, this.y + this.hitboxOffsetY, scaledCollisionWidth, scaledCollisionHeight);
     }
 }
 
 // ===============================
-// 7. HELPER FUNCTIONS (NEW)
-// ===============================
-
-/**
- * Checks for AABB collision between two sprites.
- * @param {GameSprite} spriteA
- * @param {GameSprite} spriteB
- * @returns {boolean} True if collision, false otherwise.
- */
-export function checkCollision(spriteA, spriteB) {
-    // Get the collision boxes including any offsets
-    const boxA = spriteA.getCollisionBox();
-    const boxB = spriteB.getCollisionBox();
-
-    // Check if the boxes overlap on both axes
-    return boxA.x < boxB.x + boxB.width &&
-           boxA.x + boxA.width > boxB.x &&
-           boxA.y < boxB.y + boxB.height &&
-           boxA.y + boxA.height > boxB.y;
-}
-
-/**
- * Resolves collision by pushing spriteA out of spriteB.
- * This is a simple separation response, more complex physics might be needed for realistic bouncing etc.
- * @param {GameSprite} spriteA - The sprite to move.
- * @param {GameSprite} spriteB - The sprite that spriteA is colliding with.
- */
-function resolveCollision(spriteA, spriteB) {
-    const boxA = spriteA.getCollisionBox();
-    const boxB = spriteB.getCollisionBox();
-
-    // Calculate overlap on both axes
-    const overlapX = Math.max(0, Math.min(boxA.x + boxA.width, boxB.x + boxB.width) - Math.max(boxA.x, boxB.x));
-    const overlapY = Math.max(0, Math.min(boxA.y + boxA.height, boxB.y + boxB.height) - Math.max(boxA.y, boxB.y));
-
-    if (overlapX === 0 || overlapY === 0) return; // No overlap
-
-    // Determine which axis has the smallest overlap (this is the axis of least resistance)
-    if (overlapX < overlapY) {
-        // Resolve on X axis
-        if (boxA.x < boxB.x) { // A is to the left of B, push A left
-            spriteA.x -= overlapX;
-        } else { // A is to the right of B, push A right
-            spriteA.x += overlapX;
-        }
-        spriteA.vx = 0; // Stop horizontal movement
-    } else {
-        // Resolve on Y axis
-        if (boxA.y < boxB.y) { // A is above B, push A up
-            spriteA.y -= overlapY;
-        } else { // A is below B, push A down
-            spriteA.y += overlapY;
-        }
-        spriteA.vy = 0; // Stop vertical movement
-    }
-}
-
-
-// ===============================
-// 8. MODULE IMPORTS
+// 7. MODULE IMPORTS
 // ===============================
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack } from './Ben2.js';
 import { IdleToaster, initializeToasterSprite, updateToasterMovement, toastSpecial } from './Aaron.js';
 
 // ===============================
-// 9. GAME LOOP
+// 8. GAME LOOP
 // ===============================
 function gameLoop() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (imageAssets.background && imageAssets.background.complete) {
-        context.drawImage(
-            imageAssets.background,
-            0, 0,                      // Destination x, y
-            canvas.width, canvas.height // Destination width, height (fills canvas)
-        );
-    } else {
-        context.fillStyle = '#000';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-    }
+   if (imageAssets.background && imageAssets.background.complete) {
+    context.drawImage(
+        imageAssets.background,
+        0, 0,                       // Destination x, y
+        canvas.width, canvas.height // Destination width, height (fills canvas)
+    );
+} else {
+    context.fillStyle = '#000';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+}
     // --- NEW: 3. Draw Ground Tiles ---
     const GROUND_TILE_WIDTH = 8;  // Your ground tile's width
     const GROUND_TILE_HEIGHT = 32; // Your ground tile's height
@@ -451,44 +346,11 @@ function gameLoop() {
     allGameSprites.length = 0;
     allGameSprites.push(...spritesToKeep);
 
-    // --- NEW: Handle Character-to-Character Collision ---
-    if (Butterfly && IdleToaster && checkCollision(Butterfly, IdleToaster)) {
-        // Simple collision resolution: prevent overlapping
-        // You might want to push both characters away, or only one.
-        // For simplicity, let's say the Butterfly pushes the Toaster.
-        // Or, better, if they both try to move into each other, they stop.
-        // A more robust approach would resolve based on movement vectors.
-        // For now, let's just resolve by separating them
-        resolveCollision(Butterfly, IdleToaster);
-        resolveCollision(IdleToaster, Butterfly); // Resolve from both sides to ensure proper separation
-        console.log("Collision between Butterfly and Toaster!");
-    }
-
-
-    // --- NEW: Handle Butterfly Hit Attack Collision (Butterfly's hitbox vs Toaster) ---
-    // This needs to be checked when the Butterfly is in a 'hit' animation state
-    // and its hitbox offset is active.
-    if (Butterfly && IdleToaster &&
-        Butterfly.currentAnimationState.startsWith('hit') &&
-        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0)) { // Check if hitbox is extended
-        if (checkCollision(Butterfly, IdleToaster)) {
-            console.log("Butterfly's hit attack collided with Toaster!");
-            // Apply damage to the Toaster (Toaster's health will be added later in aaron.js)
-            // For now, let's just log and provide a placeholder for damage.
-            // When Toaster has health, you'd call IdleToaster.takeDamage(damageAmount);
-            // Example:
-            // if (IdleToaster.takeDamage) {
-            //     IdleToaster.takeDamage(10); // Example damage amount
-            // }
-        }
-    }
-
-
     requestAnimationFrame(gameLoop);
 }
 
 // ===============================
-// 10. SPRITE LOADING & GAME START
+// 9. SPRITE LOADING & GAME START
 // ===============================
 function startGameAfterAssetsLoaded() {
     let allLoaded = true;
@@ -513,8 +375,7 @@ function startGameAfterAssetsLoaded() {
             }
         }
         console.log("-----------------------------------------------");
-
-        // Ensure initialization happens only once
+        
         if (!Butterfly) {
             initializePlayerSprite();
         }
@@ -523,13 +384,12 @@ function startGameAfterAssetsLoaded() {
         }
         gameLoop();
     } else {
-        // Changed to checkAllSpritesLoaded to be consistent with usage
-        setTimeout(startGameAfterAssetsLoaded, 100);
+        setTimeout(checkAllSpritesLoaded, 100);
     }
 }
 
 // ===============================
-// 11. EVENT LISTENERS
+// 10. EVENT LISTENERS
 // ===============================
 
 // Keyboard events for movement and attacks
@@ -538,11 +398,8 @@ document.addEventListener('keydown', (event) => {
         keysPressed[event.key] = true;
         event.preventDefault();
     }
-    // Only handle attacks if the player sprite exists
-    if (Butterfly) {
-        handleTornadoAttack(event.key, tornadoCooldown, (newCooldown) => { tornadoCooldown = newCooldown; });
-        handleHitAttack(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; });
-    }
+    handleTornadoAttack(event.key, tornadoCooldown, (newCooldown) => { tornadoCooldown = newCooldown; });
+    handleHitAttack(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; });
 });
 
 document.addEventListener('keyup', (event) => {

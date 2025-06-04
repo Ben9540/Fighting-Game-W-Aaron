@@ -129,43 +129,77 @@ async function jump(){
     jumpActive = false
 }
 
-export async function toastSpecial() {
-    if (toastAllow) {
-        if (toastCharge < 3 && keysPressed.i) {
-            toastAllow = false; // Disable toast special during charging
+let chargeInterval;  // Store the interval ID to clear it later
+let isSpecialKeyHeld = false;  // Track whether the special key is being held
 
-            // Delay the charge increment with async wait
-            await sleep(1000);
-            toastCharge++;
-
-            console.log(`Toast Charge: ${toastCharge}`);
-
-            if (toastCharge === 3) {
-                console.log("Max Toast Charge reached!");
+// Function to start the charging process
+export function startCharging() {
+    if (!isSpecialKeyHeld) {
+        isSpecialKeyHeld = true;
+        chargeInterval = setInterval(() => {
+            if (IdleToaster.charge < 100) {  // Limit the charge to 100
+                IdleToaster.charge += 1;
+                console.log(`Charge increased: ${IdleToaster.charge}`);
+                updateToastAnimation();  // Update the animation based on charge
             }
-
-            // Reset toastAllow for next special
-            toastAllow = true;
-        } else {
-            console.log("Toast Special is on cooldown or max charge reached!");
-        }
-    }
-
-    // Create toast sprite only when the charge is high enough
-    if (toastCharge === 3 && keysPressed.i) {
-        const toast = new GameSprite(
-            imageAssets['Bread.png'],  // Correctly access the toast image
-            50, 150,  // Position (adjust as needed)
-            16, 16,   // Size (adjust based on sprite sheet)
-            16, 16,   // Collision box (adjust as needed)
-            10,       // Animation speed (adjust as needed)
-            1.5       // Scale (adjust as needed)
-        );
-
-        addSprite(toast);
-        toast.setAnimation('idle'); // Set default animation state (if applicable)
+        }, 1000);  // Increase charge every second
     }
 }
+
+// Function to stop charging and use the special action
+export function stopCharging() {
+    if (isSpecialKeyHeld) {
+        clearInterval(chargeInterval);  // Stop the interval when the key is released
+        isSpecialKeyHeld = false;
+
+        // Use the special action
+        toastSpecial();
+
+        // Optionally reset charge after using the special (if desired)
+        // IdleToaster.charge = 0;
+    }
+}
+
+// Function to update the toaster's animation based on current charge
+export function updateToastAnimation() {
+    if (IdleToaster.charge <= 33) {
+        // Low charge: Set to the first frame (no charge)
+        IdleToaster.setAnimation('toastNoCharge');
+    } else if (IdleToaster.charge <= 66) {
+        // Medium charge: Set to the second frame (partial charge)
+        IdleToaster.setAnimation('toastPartialCharge');
+    } else {
+        // Full charge: Set to the third frame (full charge)
+        IdleToaster.setAnimation('toastFullCharge');
+    }
+}
+
+// Function to handle the special action
+export function toastSpecial() {
+    console.log(`Toaster toasting with charge: ${IdleToaster.charge}`);
+
+    // Perform the toast action based on the charge (create toast, damage, etc.)
+    if (IdleToaster.charge > 0) {
+        const toast = new GameSprite(imageAssets.toastimg, IdleToaster.x + 50, IdleToaster.y, 32, 32, 32, 32, 10);
+        allGameSprites.push(toast);  // Add toast to the game
+    }
+
+    // Optionally reset charge after using the special
+    IdleToaster.charge = 0;
+}
+
+// Hooking into key events (assuming 'z' is the special key)
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'z') {
+        startCharging();
+    }
+});
+
+document.addEventListener('keyup', (event) => {
+    if (event.key === 'z') {
+        stopCharging();
+    }
+});
 
 /*while (health>=0) {
     if (ypos>800){
