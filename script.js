@@ -210,8 +210,8 @@ export class GameSprite {
         }
         if (this.y < 0) {
             this.y = 0; this.vy = 0;
-        } else if (this.y + scaledCollisionHeight > canvas.height) {
-            this.y = canvas.height - scaledCollisionHeight; this.vy = 0;
+        } else if (this.y + scaledCollisionHeight > 270) {
+            this.y = 270 - scaledCollisionHeight; this.vy = 0;
         }
 
         // --- Lifetime management ---
