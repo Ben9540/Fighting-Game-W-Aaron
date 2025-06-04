@@ -134,7 +134,15 @@ let toastAllow = true;
 
 export function toastSpecial(){
     if(toastAllow == true){
-        if(toastCharge == 1){
+        if(toastCharge == 1 && keys.i){
+            sleep(1000)
+            toastCharge ++;
+        }
+        if(toastCharge == 2 && keys.i){
+            sleep(1000)
+            toastCharge ++;
+        }
+        if(toastCharge == 3 && keys.i){
             sleep(1000)
             toastCharge ++;
         }
