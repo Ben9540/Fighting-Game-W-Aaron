@@ -146,6 +146,9 @@ export class GameSprite {
         this.health = this.maxHealth; // Current health
         this.invincibilityFrames = 0; // Frames sprite is invincible after taking damage
         this.invincibilityDuration = 30; // 0.5 seconds at 60 FPS
+
+        // --- NEW: Caster ID for projectiles ---
+        this.caster = null; // Reference to the sprite that created this projectile
     }
 
     // --- NEW: Method to set hitbox offset ---
@@ -482,21 +485,22 @@ function gameLoop() {
             // For now, let's assume if it uses the tornado image it's a tornado projectile.
             if (sprite.image === imageAssets.tornado) {
                 // Tornado vs Butterfly
-                if (sprite !== Butterfly && checkCollision(sprite, Butterfly)) { // Ensure tornado doesn't collide with itself
+                // ADDED: Don't collide with the caster (Butterfly)
+                if (sprite.caster !== Butterfly && checkCollision(sprite, Butterfly)) {
                     console.log("Tornado collided with Butterfly!");
                     // If the tornado is meant to damage the Butterfly:
                     Butterfly.takeDamage(5); // Example damage from tornado
-                    sprite.shouldRemove = true; // Tornado dissipates on hit
+                    // REMOVED: sprite.shouldRemove = true; // Tornado no longer dissipates on hit
                     resolveCollision(Butterfly, sprite); // Push Butterfly away
                 }
                 // Tornado vs Toaster
-                if (sprite !== IdleToaster && checkCollision(sprite, IdleToaster)) { // Ensure tornado doesn't collide with itself
+                if (sprite.caster !== IdleToaster && checkCollision(sprite, IdleToaster)) {
                     console.log("Tornado collided with Toaster!");
                     // If the tornado is meant to damage the Toaster:
                     if (IdleToaster.takeDamage) {
                         IdleToaster.takeDamage(5); // Example damage from tornado
                     }
-                    sprite.shouldRemove = true; // Tornado dissipates on hit
+                    // REMOVED: sprite.shouldRemove = true; // Tornado no longer dissipates on hit
                     resolveCollision(IdleToaster, sprite); // Push Toaster away
                 }
             }

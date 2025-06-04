@@ -172,6 +172,8 @@ export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
         );
         newTornado.vx = launchVx;
         newTornado.vy = launchVy;
+        newTornado.caster = Butterfly; // Assign the Butterfly as the caster
+
 
         // Define tornado animation (adjust as needed for your sheet)
         newTornado.animations = {
