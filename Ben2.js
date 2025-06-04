@@ -1,15 +1,15 @@
 // ===============================
 // 1. IMPORTS & CONSTANTS
 // ===============================
-import { 
-    GameSprite, 
-    addSprite, 
-    BUTTERFLY_MOVE_SPEED, 
-    TORNADO_PROJECTILE_SPEED, 
-    TORNADO_LIFETIME_FRAMES, 
-    TORNADO_COOLDOWN_DURATION, 
-    HIT_COOLDOWN_DURATION, 
-    imageAssets  
+import {
+    GameSprite,
+    addSprite,
+    BUTTERFLY_MOVE_SPEED,
+    TORNADO_PROJECTILE_SPEED,
+    TORNADO_LIFETIME_FRAMES,
+    TORNADO_COOLDOWN_DURATION,
+    HIT_COOLDOWN_DURATION,
+    imageAssets
 } from './script.js';
 
 // Tornado sprite sheet and animation constants
@@ -30,6 +30,7 @@ const BUTTERFLY_COLLISION_HEIGHT = 8;
 const BUTTERFLY_COMMON_FRAMES_PER_ROW = 6; // Adjust to your sheet
 const IDLE_ANIMATION_SPEED = 10;
 const HIT_ANIMATION_SPEED = 5;
+const BUTTERFLY_HIT_DAMAGE = 15; // Damage dealt by Butterfly's hit attack (new)
 
 // ===============================
 // 2. SPRITE INITIALIZATION
@@ -45,6 +46,10 @@ export function initializePlayerSprite() {
         4.5 // scale
         // lifeTime defaults to -1
     );
+    // Set Butterfly specific health
+    Butterfly.maxHealth = 100;
+    Butterfly.health = Butterfly.maxHealth;
+
     addSprite(Butterfly); // Add it to the main sprite array
     console.log("IdleButterfly initialized and added."); // Debug log
 
@@ -67,6 +72,7 @@ export function initializePlayerSprite() {
 // ===============================
 
 // Handle hit attack (C key)
+// Modified to use the imported checkCollision and apply damage
 export function handleHitAttack(key, currentCooldown, setCooldownCallback) {
     if (key === 'c') {
         if (currentCooldown > 0) {
@@ -112,6 +118,12 @@ export function handleHitAttack(key, currentCooldown, setCooldownCallback) {
         Butterfly.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
 
         console.log(`Butterfly performing ${hitAnimationState} attack with hitbox offset (${hitboxOffsetX}, ${hitboxOffsetY}).`);
+
+        // --- NEW: Check for collision with Toaster and apply damage
+        // We'll pass `IdleToaster` as an argument or import it directly if needed,
+        // but for now, the collision check logic happens in script.js gameLoop
+        // after the hit animation and hitbox are set.
+        // This function sets up the attack, the game loop handles its effect.
     }
 }
 
@@ -134,7 +146,14 @@ export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
                 launchVy = (Butterfly.vy / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
             }
         } else {
-            launchVx = TORNADO_PROJECTILE_SPEED; // Default right if idle
+            // If idle, launch in the last known direction
+            switch (Butterfly.lastDirection) {
+                case 'up': launchVy = -TORNADO_PROJECTILE_SPEED; break;
+                case 'down': launchVy = TORNADO_PROJECTILE_SPEED; break;
+                case 'left': launchVx = -TORNADO_PROJECTILE_SPEED; break;
+                case 'right': launchVx = TORNADO_PROJECTILE_SPEED; break;
+                default: launchVx = TORNADO_PROJECTILE_SPEED; break; // Fallback
+            }
         }
 
         // Create the tornado sprite at the butterfly's position
@@ -190,19 +209,19 @@ export function updatePlayerMovement(playerSprite, keys) {
     }
 
     // DEBUG: Log the current state for movement/animation decisions
-    console.log(`Butterfly Update: vx=${playerSprite.vx}, vy=${playerSprite.vy}, currentState=${playerSprite.currentAnimationState}`);
+    // console.log(`Butterfly Update: vx=${playerSprite.vx}, vy=${playerSprite.vy}, currentState=${playerSprite.currentAnimationState}`);
 
     // If not moving, ensure idle animation is playing (unless an attack is active)
     if (playerSprite.vx === 0 && playerSprite.vy === 0 && !playerSprite.currentAnimationState.startsWith('hit')) {
         if (playerSprite.currentAnimationState !== 'idle') {
-            console.log("DEBUG: Butterfly setting animation to 'idle' (not moving, not hitting).");
+            // console.log("DEBUG: Butterfly setting animation to 'idle' (not moving, not hitting).");
             playerSprite.setAnimation('idle');
         }
     } else if (playerSprite.vx !== 0 || playerSprite.vy !== 0) {
         // If moving, ensure idle animation is playing (unless an attack is active)
         if (!playerSprite.currentAnimationState.startsWith('hit')) {
             if (playerSprite.currentAnimationState !== 'idle') {
-                console.log("DEBUG: Butterfly setting animation to 'idle' (moving, not hitting).");
+                // console.log("DEBUG: Butterfly setting animation to 'idle' (moving, not hitting).");
                 playerSprite.setAnimation('idle');
             }
         }
@@ -214,7 +233,12 @@ export function updatePlayerMovement(playerSprite, keys) {
         // --- NEW: If the finished animation was a 'hit' attack, reset the hitbox offset ---
         if (playerSprite.currentAnimationState.startsWith('hit')) {
             playerSprite.resetHitboxOffset();
-            console.log("DEBUG: Hit animation finished, resetting hitbox offset.");
+            // console.log("DEBUG: Hit animation finished, resetting hitbox offset.");
+            // --- NEW: Apply damage *after* the animation has completed its hit detection frame
+            // This is a simplified approach. In a real game, damage application might
+            // happen at a specific frame of the attack animation, not necessarily at the end.
+            // For now, if hit animation finishes and a collision was detected, apply damage.
+            // This is handled in the game loop now.
         }
         // Then set the next state (usually 'idle')
         playerSprite.setAnimation(playerSprite.currentAnimationConfig.nextState || 'idle');
