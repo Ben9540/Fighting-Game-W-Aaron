@@ -213,6 +213,23 @@ export function updatePlayerMovement(playerSprite, keys) {
     // DEBUG: Log the current state for movement/animation decisions
     // console.log(`Butterfly Update: vx=${playerSprite.vx}, vy=${playerSprite.vy}, currentState=${playerSprite.currentAnimationState}`);
 
+
+      // --- Butterfly specific rotation update ---
+    // This logic should always apply, regardless of continuous movement keys being held
+    let desiredRotation = 0;
+    const tiltAngle = playerSprite.rotationSpeed;
+    if (playerSprite.vx > 0) { // Moving right
+        desiredRotation = tiltAngle;
+    } else if (playerSprite.vx < 0) { // Moving left
+        desiredRotation = -tiltAngle;
+    } else { // Not moving horizontally, gradually return to 0 rotation
+        desiredRotation = 0;
+    }
+    // Smoothly interpolate current rotation towards the desired rotation
+    playerSprite.currentRotation = playerSprite.currentRotation * (1 - playerSprite.rotationSmoothness) + desiredRotation * playerSprite.rotationSmoothness;
+
+
+
     // If not moving, ensure idle animation is playing (unless an attack is active)
     if (playerSprite.vx === 0 && playerSprite.vy === 0 && !playerSprite.currentAnimationState.startsWith('hit')) {
         if (playerSprite.currentAnimationState !== 'idle') {
