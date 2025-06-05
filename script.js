@@ -29,6 +29,12 @@ export function addSprite(sprite) {
     allGameSprites.push(sprite);
 }
 
+// Function to remove a sprite from the game
+// This just sets a flag; actual removal from allGameSprites happens in the gameLoop
+export function removeSprite(spriteToRemove) {
+    spriteToRemove.shouldRemove = true;
+}
+
 // ===============================
 // 4. KEYBOARD STATE TRACKING
 // ===============================
@@ -39,13 +45,13 @@ export const keysPressed = {
     ArrowDown: false,
     z: false, // For tornado input
     c: false, // For hit input
-    w: false, // For Toaster movement
-    a: false, // For Toaster movement
-    s: false, // For Toaster movement
-    d: false,  // For Toaster movement
-    i: false,
-    o: false,
-    p: false
+    w: false, // For Toaster movement (jump)
+    a: false, // For Toaster movement (left)
+    s: false, // For Toaster movement (down - currently unused)
+    d: false, // For Toaster movement (right)
+    i: false, // For Toaster special attack (charge shot)
+    o: false, // For Toaster block (currently unused)
+    p: false  // For Toaster basic attack (currently unused)
 };
 
 // ===============================
@@ -57,7 +63,7 @@ const IMAGE_PATHS = {
     tornado: 'Bens Sprites/Tornado.png',
     IdleToaster: 'Aarons Sprites/Toaster.png',
     ground: 'Ground.png',
-    toastimg: 'Aarons Sprites/Bread.png',
+    toastimg: 'Aarons Sprites/Bread.png', // Assumed to be the sprite sheet for toast projectiles
     background: 'bg.png'
 };
 
@@ -119,7 +125,7 @@ export class GameSprite {
         // Animation state
         this.currentFrame = 0;
         this.frameCounter = 0;
-        this.isLoaded = true;
+        this.isLoaded = true; // Assuming images are loaded via loadAllImages before sprites are created
 
         // Movement and rotation
         this.vx = 0; this.vy = 0;
@@ -141,32 +147,31 @@ export class GameSprite {
         this.hitboxOffsetX = 0;
         this.hitboxOffsetY = 0;
 
-        // Health and Damage properties (new)
+        // Health and Damage properties
         this.maxHealth = 100; // Default max health
         this.health = this.maxHealth; // Current health
         this.invincibilityFrames = 0; // Frames sprite is invincible after taking damage
         this.invincibilityDuration = 30; // 0.5 seconds at 60 FPS
 
-        // --- NEW: Caster ID for projectiles ---
+        // Caster ID for projectiles
         this.caster = null; // Reference to the sprite that created this projectile
     }
 
-    // --- NEW: Method to set hitbox offset ---
+    // Method to set hitbox offset
     setHitboxOffset(offsetX, offsetY) {
         this.hitboxOffsetX = offsetX;
         this.hitboxOffsetY = offsetY;
     }
 
-    // --- NEW: Method to reset hitbox offset ---
+    // Method to reset hitbox offset
     resetHitboxOffset() {
         this.hitboxOffsetX = 0;
         this.hitboxOffsetY = 0;
     }
 
-    // --- NEW: Method to take damage ---
+    // Method to take damage
     takeDamage(amount) {
         if (this.invincibilityFrames > 0) {
-            // console.log(`${this.constructor.name} is invincible.`); // Commented to reduce log spam
             return; // Cannot take damage if invincible
         }
 
@@ -189,13 +194,14 @@ export class GameSprite {
             console.warn(`Animation state '${state}' not found for sprite. Available: ${Object.keys(this.animations).join(', ')}`);
             return;
         }
+        // If already in this state and it's not a looping animation, don't restart it
         if (this.currentAnimationState === state && !config.loop) {
             return;
         }
         this.currentAnimationState = state;
         this.currentAnimationConfig = config;
-        this.currentFrame = config.start;
-        this.frameCounter = 0;
+        this.currentFrame = config.start; // Reset to the start frame of the new animation
+        this.frameCounter = 0; // Reset frame counter
         this.framesPerRow = config.framesPerRow;
     }
 
@@ -209,25 +215,25 @@ export class GameSprite {
                 this.currentFrame++;
                 if (this.currentFrame > this.currentAnimationConfig.end) {
                     if (this.currentAnimationConfig.loop) {
-                        this.currentFrame = this.currentAnimationConfig.start;
+                        this.currentFrame = this.currentAnimationConfig.start; // Loop back
                     } else {
                         // If it's a non-looping animation that just finished,
-                        // trigger any 'onAnimationEnd' logic if applicable.
-                        // The 'nextState' handling is done in updatePlayerMovement/ToasterMovement
+                        // it will stay on its end frame. The calling code (e.g., updatePlayerMovement)
+                        // is responsible for transitioning to the next state (e.g., 'idle').
                         this.currentFrame = this.currentAnimationConfig.end;
                     }
                 }
             }
         } else {
+            // Fallback for sprites without explicit animation configs (less common)
             this.frameCounter++;
             if (this.frameCounter >= this.defaultAnimationSpeed) {
-                // This path might be less used if you always set an animation state
-                this.currentFrame = (this.currentFrame + 1) % this.totalFrames; // Assuming totalFrames is defined if no config
+                this.currentFrame = (this.currentFrame + 1) % this.totalFrames; // Assuming totalFrames is defined somewhere
                 this.frameCounter = 0;
             }
         }
 
-        // --- Invincibility frames update (new) ---
+        // --- Invincibility frames update ---
         if (this.invincibilityFrames > 0) {
             this.invincibilityFrames--;
             this.visible = !this.visible; // Flash effect
@@ -243,14 +249,16 @@ export class GameSprite {
         const scaledCollisionHeight = this.collisionHeight * this.scale;
 
         // --- Boundary checks (top/left/right/bottom) ---
+        // Prevents sprites from going off the left/right sides
         if (this.x < 0) {
             this.x = 0; this.vx = 0;
         } else if (this.x + scaledCollisionWidth > canvas.width) {
             this.x = canvas.width - scaledCollisionWidth; this.vx = 0;
         }
+        // Prevents sprites from going off the top and through the "ground"
         if (this.y < 0) {
             this.y = 0; this.vy = 0;
-        } else if (this.y + scaledCollisionHeight > 270) {
+        } else if (this.y + scaledCollisionHeight > 270) { // Assuming 270 is the ground level Y
             this.y = 270 - scaledCollisionHeight; this.vy = 0;
         }
 
@@ -258,19 +266,14 @@ export class GameSprite {
         if (this.lifeTime > 0) {
             this.lifeRemaining--;
             if (this.lifeRemaining <= 0) {
-                this.shouldRemove = true;
+                this.shouldRemove = true; // Mark for removal
             }
         }
-
-        // --- Rotation update (for Butterfly) ---
-        // Moved this specific logic to Ben2.js's updatePlayerMovement
-        // as it's specific to Butterfly and tightly coupled with its movement.
-        // Keeping it here means any sprite can rotate, which might not be desired.
     }
 
     // Draw the sprite on the canvas
     draw(context) {
-        if (!this.isLoaded || !this.currentAnimationConfig || !this.visible) return;
+        if (!this.isLoaded || !this.currentAnimationConfig || !this.visible) return; // Don't draw if not loaded, no animation, or invisible
 
         // Calculate source rectangle on the sprite sheet
         const sx = (this.currentFrame % this.currentAnimationConfig.framesPerRow) * this.frameWidth;
@@ -292,16 +295,16 @@ export class GameSprite {
         const centerX = destX + drawWidth / 2;
         const centerY = destY + drawHeight / 2;
 
-        context.save();
-        context.translate(centerX, centerY);
-        context.rotate(this.currentRotation);
+        context.save(); // Save the current canvas state
+        context.translate(centerX, centerY); // Move origin to sprite center
+        context.rotate(this.currentRotation); // Apply rotation
         context.drawImage(
             this.image,
-            sx, sy, this.frameWidth, this.frameHeight,
-            -drawWidth / 2, -drawHeight / 2,
-            drawWidth, drawHeight
+            sx, sy, this.frameWidth, this.frameHeight, // Source rectangle (sx, sy, sWidth, sHeight)
+            -drawWidth / 2, -drawHeight / 2, // Destination x, y (relative to new origin)
+            drawWidth, drawHeight // Destination width, height
         );
-        context.restore();
+        context.restore(); // Restore the canvas state
 
         // Optional: Draw collision box for debugging
         context.strokeStyle = 'white';
@@ -309,7 +312,7 @@ export class GameSprite {
         context.strokeRect(this.x + this.hitboxOffsetX, this.y + this.hitboxOffsetY, scaledCollisionWidth, scaledCollisionHeight);
     }
 
-    // --- NEW: Method to get the actual collision bounding box ---
+    // Method to get the actual collision bounding box, adjusted for offsets
     getCollisionBox() {
         return {
             x: this.x + this.hitboxOffsetX,
@@ -321,7 +324,7 @@ export class GameSprite {
 }
 
 // ===============================
-// 7. HELPER FUNCTIONS (NEW)
+// 7. HELPER FUNCTIONS
 // ===============================
 
 /**
@@ -388,35 +391,34 @@ export function resolveCollision(spriteA, spriteB) {
 // ===============================
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE } from './Ben2.js';
-import { IdleToaster, initializeToasterSprite, updateToasterMovement, toastSpecial } from './Aaron.js';
+// Only import necessary functions for Toaster movement and cooldown, not the internal helpers
+import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown } from './Aaron.js';
 
 // ===============================
 // 9. GAME LOOP
 // ===============================
 function gameLoop() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height); // Clear the entire canvas
 
+    // --- Draw Background Image ---
     if (imageAssets.background && imageAssets.background.complete) {
         context.drawImage(
             imageAssets.background,
-            0, 0,                      // Destination x, y
+            0, 0,                      // Destination x, y (top-left corner of canvas)
             canvas.width, canvas.height // Destination width, height (fills canvas)
         );
     } else {
-        context.fillStyle = '#000';
+        context.fillStyle = '#000'; // Fallback background color if image not loaded
         context.fillRect(0, 0, canvas.width, canvas.height);
     }
+
     // --- Draw Ground Tiles ---
-    const GROUND_TILE_WIDTH = 8;  // Your ground tile's width
-    const GROUND_TILE_HEIGHT = 32; // Your ground tile's height
+    const GROUND_TILE_WIDTH = 8;    // Your ground tile's width
+    const GROUND_TILE_HEIGHT = 32;  // Your ground tile's height
+    const GROUND_START_Y = canvas.height - GROUND_TILE_HEIGHT; // Y position for the bottom of the canvas
 
-    // Calculate the Y position for the bottom of the canvas
-    const GROUND_START_Y = canvas.height - GROUND_TILE_HEIGHT;
-
-    if (imageAssets.ground && imageAssets.ground.complete) { // Ensure image is loaded
-        // Calculate how many tiles are needed to cover the canvas width
-        const numTilesX = Math.ceil(canvas.width / GROUND_TILE_WIDTH);
-
+    if (imageAssets.ground && imageAssets.ground.complete) { // Ensure ground image is loaded
+        const numTilesX = Math.ceil(canvas.width / GROUND_TILE_WIDTH); // Calculate number of tiles needed across the width
         for (let i = 0; i < numTilesX; i++) {
             context.drawImage(
                 imageAssets.ground,
@@ -426,101 +428,117 @@ function gameLoop() {
                 GROUND_TILE_HEIGHT
             );
         }
-    } else {
-        // Optional: Log if ground tile isn't loaded yet
-        // console.warn("Ground tile image not loaded yet.");
     }
 
-
-    // Update player and toaster movement
+    // Update player and toaster movement based on keyboard input
     updatePlayerMovement(Butterfly, keysPressed);
     updateToasterMovement(IdleToaster, keysPressed);
 
-    // Decrement cooldowns
+    // Decrement attack cooldowns
     if (tornadoCooldown > 0) tornadoCooldown--;
     if (hitCooldown > 0) hitCooldown--;
+    updateToastCooldown(); // Decrement toast cooldown
 
-    // Update, draw, and filter sprites
+    // Update, draw, and filter sprites (remove those marked for removal)
     const spritesToKeep = [];
     for (let i = 0; i < allGameSprites.length; i++) {
         const sprite = allGameSprites[i];
-        sprite.update();
+        sprite.update(); // Call each sprite's update method
         if (!sprite.shouldRemove) {
-            sprite.draw(context);
+            sprite.draw(context); // Draw only if not marked for removal
             spritesToKeep.push(sprite);
         }
     }
-    allGameSprites.length = 0;
-    allGameSprites.push(...spritesToKeep);
+    // Efficiently update the allGameSprites array with only the sprites to keep
+    allGameSprites.length = 0; // Clear the original array
+    allGameSprites.push(...spritesToKeep); // Add back only the sprites that should remain
 
 
-    // --- Handle Character-to-Character Collision ---
+    // --- Handle Character-to-Character Collision (Butterfly vs Toaster) ---
     if (Butterfly && IdleToaster) {
         if (checkCollision(Butterfly, IdleToaster)) {
-            // Resolve collision so they don't overlap
+            // Resolve collision to prevent characters from overlapping
             resolveCollision(Butterfly, IdleToaster);
             resolveCollision(IdleToaster, Butterfly); // Resolve from both sides for robust separation
-            // console.log("Collision between Butterfly and Toaster!"); // Commented to reduce log spam
         }
     }
 
     // --- Handle Butterfly Hit Attack Collision (Butterfly's hitbox vs Toaster) ---
     if (Butterfly && IdleToaster &&
-        Butterfly.currentAnimationState.startsWith('hit') &&
-        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0) && // Check if hitbox is extended
-        checkCollision(Butterfly, IdleToaster)) {
+        Butterfly.currentAnimationState.startsWith('hit') && // Check if Butterfly is in a 'hit' animation
+        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0) && // Check if Butterfly's hitbox is extended
+        checkCollision(Butterfly, IdleToaster)) { // Check for collision with Toaster
         // Apply damage to the Toaster
-        if (IdleToaster.takeDamage) { // Check if Toaster has the takeDamage method
+        if (IdleToaster.takeDamage) { // Ensure Toaster has the takeDamage method
             IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE); // Use the damage constant from Ben2.js
         }
     }
 
-    // --- Handle Tornado Projectile Collision ---
-    // Iterate through all active sprites to find tornadoes and check their collision
-    // against characters.
+    // --- Handle Projectile Collisions (Tornado vs Characters, Toast vs Characters) ---
     if (Butterfly && IdleToaster) {
         for (let i = 0; i < allGameSprites.length; i++) {
-            const sprite = allGameSprites[i];
-            // Check if the sprite is a tornado (you might add a 'type' property to GameSprite)
-            // For now, let's assume if it uses the tornado image it's a tornado projectile.
-            if (sprite.image === imageAssets.tornado) {
-                // Tornado vs Butterfly
-                // ADDED: Don't collide with the caster (Butterfly)
-                if (sprite.caster !== Butterfly && checkCollision(sprite, Butterfly)) {
+            const projectile = allGameSprites[i];
+
+            // Check if the sprite is a tornado projectile
+            if (projectile.image === imageAssets.tornado) {
+                // Tornado vs Butterfly (don't collide with the caster)
+                if (projectile.caster !== Butterfly && checkCollision(projectile, Butterfly)) {
                     console.log("Tornado collided with Butterfly!");
-                    // If the tornado is meant to damage the Butterfly:
                     Butterfly.takeDamage(5); // Example damage from tornado
-                    // REMOVED: sprite.shouldRemove = true; // Tornado no longer dissipates on hit
-                    resolveCollision(Butterfly, sprite); // Push Butterfly away
+                    resolveCollision(Butterfly, projectile); // Push Butterfly away
                 }
-                // Tornado vs Toaster
-                if (sprite.caster !== IdleToaster && checkCollision(sprite, IdleToaster)) {
+                // Tornado vs Toaster (don't collide with the caster if the toaster casts tornadoes)
+                if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
                     console.log("Tornado collided with Toaster!");
-                    // If the tornado is meant to damage the Toaster:
                     if (IdleToaster.takeDamage) {
                         IdleToaster.takeDamage(5); // Example damage from tornado
                     }
-                    // REMOVED: sprite.shouldRemove = true; // Tornado no longer dissipates on hit
-                    resolveCollision(IdleToaster, sprite); // Push Toaster away
+                    resolveCollision(IdleToaster, projectile); // Push Toaster away
+                }
+            }
+            if (projectile.image === imageAssets.toastimg) {
+                // Tornado vs Butterfly (don't collide with the caster)
+                if (projectile.caster !== Butterfly && checkCollision(projectile, Butterfly)) {
+                    console.log("Toast collided with Butterfly!");
+                    if(toast)
+                    Butterfly.takeDamage(5); // Example damage from tornado
+                    resolveCollision(Butterfly, projectile); // Push Butterfly away
+                }
+                // Tornado vs Toaster (don't collide with the caster if the toaster casts tornadoes)
+                if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
+                    console.log("Toast collided with Toaster!");
+                    if (IdleToaster.takeDamage) {
+                        IdleToaster.takeDamage(5); // Example damage from tornado
+                    }
+                    resolveCollision(IdleToaster, projectile); // Push Toaster away
+                }
+            }
+            // Check if the sprite is a toast projectile
+            else if (projectile.image === imageAssets.toastimg) {
+                // Toast vs Butterfly (don't collide with the caster)
+                if (projectile.caster !== IdleToaster && checkCollision(projectile, Butterfly)) {
+                    console.log("Toast collided with Butterfly!");
+                    Butterfly.takeDamage(10); // Example damage from toast
+                    projectile.shouldRemove = true; // Toast disappears on hit
+                    // No resolveCollision for projectiles that disappear
                 }
             }
         }
     }
 
-    // --- Draw Health Bar for Butterfly (NEW) ---
+    // --- Draw Health Bar for Butterfly ---
     if (Butterfly) {
         drawHealthBar(context, Butterfly);
     }
-    // You'd add a similar block for IdleToaster when you implement its health and damage
-    // if (IdleToaster) {
-    //     drawHealthBar(context, IdleToaster);
-    // }
+    // Draw Health Bar for IdleToaster
+    if (IdleToaster) {
+        drawHealthBar(context, IdleToaster);
+    }
 
-
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop); // Request next frame for continuous animation
 }
 
-// --- Health Bar Drawing Function (NEW) ---
+// --- Health Bar Drawing Function ---
 function drawHealthBar(ctx, sprite) {
     const barWidth = sprite.collisionWidth * sprite.scale * 1.5; // Health bar wider than sprite
     const barHeight = 4;
@@ -592,13 +610,16 @@ function startGameAfterAssetsLoaded() {
 document.addEventListener('keydown', (event) => {
     if (keysPressed.hasOwnProperty(event.key)) {
         keysPressed[event.key] = true;
-        event.preventDefault();
+        event.preventDefault(); // Prevent default browser actions for game keys
     }
     // Only handle attacks if the player sprite exists
     if (Butterfly) {
+        // These functions now internally check for cooldowns and key states
         handleTornadoAttack(event.key, tornadoCooldown, (newCooldown) => { tornadoCooldown = newCooldown; });
         handleHitAttack(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; });
     }
+    // The toaster's special attack (toast charge) is handled in updateToasterMovement
+    // when 'i' is pressed or released, so no direct call here.
 });
 
 document.addEventListener('keyup', (event) => {
