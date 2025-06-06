@@ -187,7 +187,7 @@ function createChargingToast() {
     // You need to adjust these frame numbers based on your actual 'Bread.png' spritesheet
     toast.animations = {
         'toastCharge1': { framesPerRow: 1, start: 0, end: 0, speed: 10, loop: true }, // Example: First frame for charge level 1
-        'toastCharge2': { framesPerRow: 2, start: 0, end: 1, speed: 10, loop: true }, // Example: Second frame for charge level 2
+        'toastCharge2': { framesPerRow: 2, start: 1, end: 1, speed: 10, loop: true }, // Example: Second frame for charge level 2
         'toastCharge3': { framesPerRow: 1, start: 1, end: 1, speed: 10, loop: true }, // Example: Third frame for charge level 3
     };
     toast.setAnimation('toastCharge1'); // Start with the first charge animation
