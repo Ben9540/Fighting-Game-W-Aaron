@@ -500,9 +500,7 @@ function gameLoop() {
                 // Tornado vs Butterfly (don't collide with the caster)
                 if (projectile.caster !== Butterfly && checkCollision(projectile, Butterfly)) {
                     console.log("Toast collided with Butterfly!");
-                    if(toast)
                     Butterfly.takeDamage(5); // Example damage from tornado
-                    resolveCollision(Butterfly, projectile); // Push Butterfly away
                 }
                 // Tornado vs Toaster (don't collide with the caster if the toaster casts tornadoes)
                 if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
@@ -510,7 +508,6 @@ function gameLoop() {
                     if (IdleToaster.takeDamage) {
                         IdleToaster.takeDamage(5); // Example damage from tornado
                     }
-                    resolveCollision(IdleToaster, projectile); // Push Toaster away
                 }
             }
             // Check if the sprite is a toast projectile
