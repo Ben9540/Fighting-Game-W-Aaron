@@ -392,7 +392,7 @@ export function resolveCollision(spriteA, spriteB) {
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE } from './Ben2.js';
 // Only import necessary functions for Toaster movement and cooldown, not the internal helpers
-import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown } from './Aaron.js';
+import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, currentChargeDuration } from './Aaron.js';
 
 // ===============================
 // 9. GAME LOOP
@@ -497,10 +497,13 @@ function gameLoop() {
                 }
             }
             if (projectile.image === imageAssets.toastimg) {
+                
                 // Tornado vs Butterfly (don't collide with the caster)
                 if (projectile.caster !== Butterfly && checkCollision(projectile, Butterfly)) {
+                    if(currentChargeDuration >= 0 && <1000){
+                        Butterfly.takeDamage(5); // Example damage from tornado
+                    }
                     console.log("Toast collided with Butterfly!");
-                    Butterfly.takeDamage(5); // Example damage from tornado
                 }
                 // Tornado vs Toaster (don't collide with the caster if the toaster casts tornadoes)
                 if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {

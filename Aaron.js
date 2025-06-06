@@ -2,6 +2,7 @@ import { GameSprite, addSprite, removeSprite, TOASTER_MOVE_SPEED, imageAssets } 
 
 
 export let IdleToaster;
+export let currentChargeDuration;
 const TOASTER_SPRITESHEET_KEY = 'IdleToaster'; // Key for imageAssets
 const TOASTER_FRAME_WIDTH = 8;
 const TOASTER_FRAME_HEIGHT = 8;
@@ -100,6 +101,7 @@ export function updateToasterMovement(toasterSprite, keys) {
         // Update toast animation based on charge duration
         if (currentChargeDuration > 2000) {
             toasterSprite.currentToastSprite.setAnimation('toastCharge3');
+            
         } else if (currentChargeDuration > 1000) {
             toasterSprite.currentToastSprite.setAnimation('toastCharge2');
         } else {
