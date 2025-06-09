@@ -3,6 +3,7 @@ import { GameSprite, addSprite, removeSprite, TOASTER_MOVE_SPEED, imageAssets } 
 
 export let IdleToaster;
 export let chargeLevel
+import{HIT_COOLDOWN_DURATION} from '/script.js'
 const TOASTER_SPRITESHEET_KEY = 'IdleToaster'; // Key for imageAssets
 const TOASTER_FRAME_WIDTH = 8;
 const TOASTER_FRAME_HEIGHT = 8;

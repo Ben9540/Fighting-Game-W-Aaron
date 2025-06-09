@@ -613,7 +613,7 @@ document.addEventListener('keydown', (event) => {
     }
     if (IdleToaster) {
         // These functions now internally check for cooldowns and key states
-        handleHitAttack2(event.key, hitCooldown2, (newCooldown2) => { hitCooldown2 = newCooldown2; });
+        handleHitAttack2(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; });
     }
     // The toaster's special attack (toast charge) is handled in updateToasterMovement
     // when 'i' is pressed or released, so no direct call here.
