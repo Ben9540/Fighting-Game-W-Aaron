@@ -392,7 +392,7 @@ export function resolveCollision(spriteA, spriteB) {
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE } from './Ben2.js';
 // Only import necessary functions for Toaster movement and cooldown, not the internal helpers
-import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel } from './Aaron.js';
+import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel, handleHitAttack2 } from './Aaron.js';
 
 // ===============================
 // 9. GAME LOOP
@@ -610,6 +610,10 @@ document.addEventListener('keydown', (event) => {
         // These functions now internally check for cooldowns and key states
         handleTornadoAttack(event.key, tornadoCooldown, (newCooldown) => { tornadoCooldown = newCooldown; });
         handleHitAttack(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; });
+    }
+    if (IdleToaster) {
+        // These functions now internally check for cooldowns and key states
+        handleHitAttack2(event.key, hitCooldown2, (newCooldown2) => { hitCooldown2 = newCooldown2; });
     }
     // The toaster's special attack (toast charge) is handled in updateToasterMovement
     // when 'i' is pressed or released, so no direct call here.

@@ -138,9 +138,6 @@ export function updateToasterMovement(toasterSprite, keys) {
 if (keys.o){
 //block
 }
-if (keys.p) {
-
-}
 }
 
 let jumpActive = false;
@@ -212,5 +209,58 @@ function shootToast(toastSprite, chargeLevel) {
 export function updateToastCooldown() {
     if (toastCooldown > 0) {
         toastCooldown--;
+    }
+}
+
+
+
+
+export function handleHitAttack2(key, currentCooldown2, setCooldownCallback2) {
+    if (key === 'p') {
+        if (currentCooldown2 > 0) {
+            return;
+        }
+        setCooldownCallback2(HIT_COOLDOWN_DURATION); // Start hit cooldown
+
+        let hitAnimationState = 'idle'; // Default to idle if direction is unknown
+        let hitboxOffsetX = 0; // Initialize offsets for this attack
+        let hitboxOffsetY = 0;
+
+        const HITBOX_EXTENSION_SCALED = 4 * IdleToaster.scale;
+
+        // Determine which hit animation to play based on last direction
+        switch (IdleToaster.lastDirection) {
+            case 'w':
+                hitAnimationState = 'hitUp';
+                hitboxOffsetY = -HITBOX_EXTENSION_SCALED; // Move hitbox up by scaled amount
+                break;
+            case 'a':
+                hitAnimationState = 'hitLeft';
+                hitboxOffsetX = -HITBOX_EXTENSION_SCALED; // Move hitbox left
+                break;
+            case 'd':
+                hitAnimationState = 'hitRight';
+                hitboxOffsetX = HITBOX_EXTENSION_SCALED; // Move hitbox right
+                break;
+            default:
+                hitAnimationState = 'hitRight'; // Fallback
+                hitboxOffsetX = HITBOX_EXTENSION_SCALED;
+                break;
+        }
+
+        IdleToaster.setAnimation(hitAnimationState);
+        // Optionally stop movement during hit animation
+        // Butterfly.vx = 0;
+        // Butterfly.vy = 0;
+
+        IdleToaster.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
+
+        console.log(`Butterfly performing ${hitAnimationState} attack with hitbox offset (${hitboxOffsetX}, ${hitboxOffsetY}).`);
+
+        // --- NEW: Check for collision with Toaster and apply damage
+        // We'll pass `IdleToaster` as an argument or import it directly if needed,
+        // but for now, the collision check logic happens in script.js gameLoop
+        // after the hit animation and hitbox are set.
+        // This function sets up the attack, the game loop handles its effect.
     }
 }
