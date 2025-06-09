@@ -200,6 +200,7 @@ function createChargingToast() {
 
 // Function to handle toast projectile shot
 function shootToast(toastSprite, chargeLevel) {
+    toastSprite.chargeLevel = chargeLevel; // Store charge level in the toast sprite
     toastSprite.vy = -5;
     toastSprite.vx = 0;
     toastSprite.lifeTime = 60;

@@ -404,7 +404,7 @@ function gameLoop() {
     if (imageAssets.background && imageAssets.background.complete) {
         context.drawImage(
             imageAssets.background,
-            0, 0,                      // Destination x, y (top-left corner of canvas)
+            0, 0,                      // Destination x, y (top-left corner of canvas)
             canvas.width, canvas.height // Destination width, height (fills canvas)
         );
     } else {
@@ -413,8 +413,8 @@ function gameLoop() {
     }
 
     // --- Draw Ground Tiles ---
-    const GROUND_TILE_WIDTH = 8;    // Your ground tile's width
-    const GROUND_TILE_HEIGHT = 32;  // Your ground tile's height
+    const GROUND_TILE_WIDTH = 8;    // Your ground tile's width
+    const GROUND_TILE_HEIGHT = 32;  // Your ground tile's height
     const GROUND_START_Y = canvas.height - GROUND_TILE_HEIGHT; // Y position for the bottom of the canvas
 
     if (imageAssets.ground && imageAssets.ground.complete) { // Ensure ground image is loaded
@@ -423,7 +423,7 @@ function gameLoop() {
             context.drawImage(
                 imageAssets.ground,
                 i * GROUND_TILE_WIDTH, // X position for this tile
-                GROUND_START_Y,        // Y position: fixed at the bottom
+                GROUND_START_Y,        // Y position: fixed at the bottom
                 GROUND_TILE_WIDTH,
                 GROUND_TILE_HEIGHT
             );
@@ -479,6 +479,9 @@ function gameLoop() {
         for (let i = 0; i < allGameSprites.length; i++) {
             const projectile = allGameSprites[i];
 
+            // Skip if the sprite is marked for removal or doesn't have an image (e.g., if it's a generic invisible hitbox)
+            if (projectile.shouldRemove || !projectile.image) continue;
+
             // Check if the sprite is a tornado projectile
             if (projectile.image === imageAssets.tornado) {
                 // Tornado vs Butterfly (don't collide with the caster)
@@ -486,61 +489,34 @@ function gameLoop() {
                     console.log("Tornado collided with Butterfly!");
                     Butterfly.takeDamage(5); // Example damage from tornado
                     resolveCollision(Butterfly, projectile); // Push Butterfly away
+                    // DO NOT SET shouldRemove = true here for Tornado
                 }
-                // Tornado vs Toaster (don't collide with the caster if the toaster casts tornadoes)
+                // Tornado vs Toaster (don't collide with the caster)
                 if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
                     console.log("Tornado collided with Toaster!");
                     if (IdleToaster.takeDamage) {
                         IdleToaster.takeDamage(5); // Example damage from tornado
                     }
                     resolveCollision(IdleToaster, projectile); // Push Toaster away
+                    // DO NOT SET shouldRemove = true here for Tornado
                 }
             }
-            if (projectile.image === imageAssets.toastimg) {
-                
-                // Tornado vs Butterfly (don't collide with the caster)
-                if (projectile.caster !== IdleToaster && checkCollision(projectile, Butterfly)) {
-                    if(chargeLevel == 1){
-                        Butterfly.takeDamage(5); // Example damage from tornado
-                    }
-                    if(chargeLevel == 2){
-                        Butterfly.takeDamage(10); // Example damage from tornado
-                    }
-                    if(chargeLevel == 3){
-                        Butterfly.takeDamage(20); // Example damage from tornado
-                    }
-                    console.log("Toast collided with Butterfly!");
-                }
-                // Tornado vs Toaster (don't collide with the caster if the toaster casts tornadoes)
-                if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
-                    console.log("Toast collided with Toaster!");
-                    if(chargeLevel == 1){
-                        IdleToaster.takeDamage(5); // Example damage from tornado
-                    }
-                    if(chargeLevel == 2){
-                        IdleToaster.takeDamage(10); // Example damage from tornado
-                    }
-                    if(chargeLevel == 3){
-                        IdleToaster.takeDamage(20); // Example damage from tornado
-                    }
-                    console.log("Toast collided with Butterfly!");
-                }
-                
-            }
-            // Check if the sprite is a toast projectile
-             if (projectile.image === imageAssets.toastimg) {
-                // Toast vs Butterfly (don't collide with the caster)
-                if (projectile.caster !== IdleToaster && checkCollision(projectile, Butterfly)) {
-                    console.log("Toast collided with Butterfly!");
-                    Butterfly.takeDamage(10); // Example damage from toast
-                    projectile.shouldRemove = true; // Toast disappears on hit
-                    // No resolveCollision for projectiles that disappear
-                    
-               }
-                }
             
-        
-    }
+            // Check if the sprite is a toast projectile
+            if (projectile.image === imageAssets.toastimg) {
+                // Toast vs Butterfly: Check if the toast was cast by the Toaster AND it collides with Butterfly
+                // AND the toast itself hasn't already been marked for removal (important for single hit)
+                if (projectile.caster === IdleToaster && checkCollision(projectile, Butterfly) && !projectile.shouldRemove) {
+                    let damage = 5;
+                    if (projectile.chargeLevel === 2) damage = 10;
+                    if (projectile.chargeLevel === 3) damage = 20;
+                    
+                    Butterfly.takeDamage(damage);
+                    projectile.shouldRemove = true; // Toast disappears on hit
+                    console.log("Toast from Toaster collided with Butterfly! Damage:", damage, "Charge Level:", projectile.chargeLevel);
+                }
+            }
+        }
     }
     // --- Draw Health Bar for Butterfly ---
     if (Butterfly) {
