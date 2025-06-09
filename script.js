@@ -509,7 +509,7 @@ function gameLoop() {
                 if (projectile.caster === IdleToaster && checkCollision(projectile, Butterfly) && !projectile.shouldRemove) {
                     let damage = 5;
                     if (projectile.chargeLevel === 2) damage = 10;
-                    if (projectile.chargeLevel === 3) damage = 20;
+                    if (projectile.chargeLevel === 3) damage = 15;
                     
                     Butterfly.takeDamage(damage);
                     projectile.shouldRemove = true; // Toast disappears on hit
