@@ -163,7 +163,7 @@ async function jump() {
         await sleep(frameDelay);
     }
     // Descend
-    for (let i = 0; IdleToaster.y < GROUND_Y; i++) {
+    for (let i = 0;  i < totalFrames && IdleToaster.y < GROUND_Y; i++) {
         IdleToaster.y += (jumpHeight / totalFrames) * 1.18;
         IdleToaster.y = Math.min(GROUND_Y, IdleToaster.y);
         await sleep(frameDelay)
