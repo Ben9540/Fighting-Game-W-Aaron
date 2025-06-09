@@ -515,13 +515,13 @@ function gameLoop() {
                 if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
                     console.log("Toast collided with Toaster!");
                     if(chargeLevel == 1){
-                        Butterfly.takeDamage(5); // Example damage from tornado
+                        IdleToaster.takeDamage(5); // Example damage from tornado
                     }
                     if(chargeLevel == 2){
-                        Butterfly.takeDamage(10); // Example damage from tornado
+                        IdleToaster.takeDamage(10); // Example damage from tornado
                     }
                     if(chargeLevel == 3){
-                        Butterfly.takeDamage(20); // Example damage from tornado
+                        IdleToaster.takeDamage(20); // Example damage from tornado
                     }
                     console.log("Toast collided with Butterfly!");
                 }
