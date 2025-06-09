@@ -392,7 +392,7 @@ export function resolveCollision(spriteA, spriteB) {
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE } from './Ben2.js';
 // Only import necessary functions for Toaster movement and cooldown, not the internal helpers
-import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, currentChargeDuration } from './Aaron.js';
+import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel } from './Aaron.js';
 
 // ===============================
 // 9. GAME LOOP
@@ -499,14 +499,14 @@ function gameLoop() {
             if (projectile.image === imageAssets.toastimg) {
                 
                 // Tornado vs Butterfly (don't collide with the caster)
-                if (projectile.caster !== Butterfly && checkCollision(projectile, Butterfly)) {
-                    if(currentChargeDuration >= 0 && currentChargeDuration <1000){
+                if (projectile.caster !== IdleToaster && checkCollision(projectile, Butterfly)) {
+                    if(chargeLevel == 1){
                         Butterfly.takeDamage(5); // Example damage from tornado
                     }
-                    if(currentChargeDuration >= 1000 && currentChargeDuration <2000){
+                    if(chargeLevel == 2){
                         Butterfly.takeDamage(10); // Example damage from tornado
                     }
-                    if(currentChargeDuration >= 2000){
+                    if(chargeLevel == 3){
                         Butterfly.takeDamage(20); // Example damage from tornado
                     }
                     console.log("Toast collided with Butterfly!");
@@ -514,18 +514,18 @@ function gameLoop() {
                 // Tornado vs Toaster (don't collide with the caster if the toaster casts tornadoes)
                 if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
                     console.log("Toast collided with Toaster!");
-                    if(currentChargeDuration >= 0 && currentChargeDuration <1000){
+                    if(chargeLevel == 1){
                         Butterfly.takeDamage(5); // Example damage from tornado
                     }
-                    if(currentChargeDuration >= 1000 && currentChargeDuration <2000){
+                    if(chargeLevel == 2){
                         Butterfly.takeDamage(10); // Example damage from tornado
                     }
-                    if(currentChargeDuration >= 2000){
+                    if(chargeLevel == 3){
                         Butterfly.takeDamage(20); // Example damage from tornado
                     }
                     console.log("Toast collided with Butterfly!");
                 }
-                }
+                
             }
             // Check if the sprite is a toast projectile
              if (projectile.image === imageAssets.toastimg) {
@@ -541,7 +541,7 @@ function gameLoop() {
             
         
     }
-
+    }
     // --- Draw Health Bar for Butterfly ---
     if (Butterfly) {
         drawHealthBar(context, Butterfly);

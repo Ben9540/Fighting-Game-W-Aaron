@@ -2,7 +2,7 @@ import { GameSprite, addSprite, removeSprite, TOASTER_MOVE_SPEED, imageAssets } 
 
 
 export let IdleToaster;
-export let currentChargeDuration;
+export let chargeLevel
 const TOASTER_SPRITESHEET_KEY = 'IdleToaster'; // Key for imageAssets
 const TOASTER_FRAME_WIDTH = 8;
 const TOASTER_FRAME_HEIGHT = 8;
