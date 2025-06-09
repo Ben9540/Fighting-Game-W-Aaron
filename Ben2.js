@@ -49,6 +49,8 @@ export function initializePlayerSprite() {
     // Set Butterfly specific health
     Butterfly.maxHealth = 100;
     Butterfly.health = Butterfly.maxHealth;
+    Butterfly.hasDealtDamageThisAttack = false; // Flag to track if damage has been dealt in current attack
+
 
     addSprite(Butterfly); // Add it to the main sprite array
     console.log("IdleButterfly initialized and added."); // Debug log
@@ -84,7 +86,8 @@ export function handleHitAttack(key, currentCooldown, setCooldownCallback) {
         let hitboxOffsetX = 0; // Initialize offsets for this attack
         let hitboxOffsetY = 0;
 
-        const HITBOX_EXTENSION_SCALED = 4 * Butterfly.scale;
+        const HITBOX_EXTENSION_BASE = 10; // Change from 4 to 10
+        const HITBOX_EXTENSION_SCALED = HITBOX_EXTENSION_BASE * Butterfly.scale;
 
         // Determine which hit animation to play based on last direction
         switch (Butterfly.lastDirection) {

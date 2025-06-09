@@ -338,14 +338,21 @@ export function checkCollision(spriteA, spriteB) {
     if (!spriteA.visible || !spriteB.visible) return false;
 
     // Get the collision boxes including any offsets
-    const boxA = spriteA.getCollisionBox();
-    const boxB = spriteB.getCollisionBox();
+  const box1 = spriteA.getCollisionBox();
+    const box2 = spriteB.getCollisionBox();
 
-    // Check if the boxes overlap on both axes
-    return boxA.x < boxB.x + boxB.width &&
-           boxA.x + boxA.width > boxB.x &&
-           boxA.y < boxB.y + boxB.height &&
-           boxA.y + boxA.height > boxB.y;
+    // Check for overlap on x-axis (now includes touching at edges)
+    // box1's right edge must be >= box2's left edge
+    // AND box1's left edge must be <= box2's right edge
+    const xOverlap = box1.x <= box2.x + box2.width && box1.x + box1.width >= box2.x;
+
+    // Check for overlap on y-axis (now includes touching at edges)
+    // box1's bottom edge must be >= box2's top edge
+    // AND box1's top edge must be <= box2's bottom edge
+    const yOverlap = box1.y <= box2.y + box2.height && box1.y + box1.height >= box2.y;
+
+    // Return true if both x and y axes overlap or touch
+    return xOverlap && yOverlap;
 }
 
 /**
@@ -466,10 +473,11 @@ function gameLoop() {
     // --- Handle Butterfly Hit Attack Collision (Butterfly's hitbox vs Toaster) ---
     if (Butterfly && IdleToaster &&
         Butterfly.currentAnimationState.startsWith('hit') && // Check if Butterfly is in a 'hit' animation
-        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0) && // Check if Butterfly's hitbox is extended
+        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0) &&  (!Butterfly.hasDealtDamageThisAttack) && // Check if Butterfly's hitbox is extended
         checkCollision(Butterfly, IdleToaster)) { // Check for collision with Toaster
         // Apply damage to the Toaster
         if (IdleToaster.takeDamage) { // Ensure Toaster has the takeDamage method
+            Butterfly.hasDealtDamageThisAttack = true;
             IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE); // Use the damage constant from Ben2.js
         }
     }
