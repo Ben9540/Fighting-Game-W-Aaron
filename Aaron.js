@@ -31,9 +31,9 @@ export function initializeToasterSprite() {
     IdleToaster.animations = {
         'idle': { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 0, end: 0, speed: IDLE_ANIMATION_SPEED, loop: true },
         // Add other animations as needed, e.g.:
-        // 'hitRight':  { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-        // 'hitLeft':   { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-        // 'hitUp':     { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+         'hitRight':  { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+         'hitLeft':   { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+         'hitUp':     { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
         // 'hitDown':   { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }
     };
 
