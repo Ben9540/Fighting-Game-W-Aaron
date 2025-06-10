@@ -2,7 +2,7 @@
 // 1. GLOBAL CONSTANTS & VARIABLES
 // ===============================
 export const BUTTERFLY_MOVE_SPEED = 1;
-export const TORNADO_PROJECTILE_SPEED = 3;
+export const TORNADO_PROJECTILE_SPEED = 4;
 export const TORNADO_LIFETIME_FRAMES = 150;
 export const TORNADO_COOLDOWN_DURATION = 150;
 export const HIT_COOLDOWN_DURATION = 60; // Cooldown for hit animation (e.g., 1 second)
