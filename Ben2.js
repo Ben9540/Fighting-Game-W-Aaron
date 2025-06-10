@@ -82,6 +82,9 @@ export function handleHitAttack(key, currentCooldown, setCooldownCallback) {
         }
         setCooldownCallback(HIT_COOLDOWN_DURATION); // Start hit cooldown
 
+        // When starting a new attack, reset the damage dealt flag
+        Butterfly.hasDealtDamageThisAttack = false;
+
         let hitAnimationState = 'idle'; // Default to idle if direction is unknown
         let hitboxOffsetX = 0; // Initialize offsets for this attack
         let hitboxOffsetY = 0;
