@@ -33,7 +33,7 @@ const HIT_ANIMATION_SPEED = 5;
 export const BUTTERFLY_HIT_DAMAGE = 15; // Damage dealt by Butterfly's hit attack (new)
 const DASH_SPEED = 10; // How fast the dash is (adjust as needed)
 const DASH_DURATION_FRAMES = 10; // How many frames the dash lasts (adjust as needed)
-const DASH_COOLDOWN_DURATION = 60; // Cooldown for dash in frames (60 frames = 1 second at 60fps)
+const DASH_COOLDOWN_DURATION = 0; // Cooldown for dash in frames (60 frames = 1 second at 60fps)
 
 
 // ===============================
