@@ -9,6 +9,7 @@ export const HIT_COOLDOWN_DURATION = 60; // Cooldown for hit animation (e.g., 1 
 let tornadoCooldown = 0;
 let hitCooldown = 0; // Cooldown variable for hit animation
 export const TOASTER_MOVE_SPEED = 2;
+export let dashCooldown = 0; // <--- ADD THIS LINE
 
 // ===============================
 // 2. CANVAS SETUP
@@ -45,6 +46,7 @@ export const keysPressed = {
     ArrowDown: false,
     z: false, // For tornado input
     c: false, // For hit input
+    x: false,  // For dash
     w: false, // For Toaster movement (jump)
     a: false, // For Toaster movement (left)
     s: false, // For Toaster movement (down - currently unused)
@@ -397,7 +399,7 @@ export function resolveCollision(spriteA, spriteB) {
 // 8. MODULE IMPORTS
 // ===============================
 // Import player and toaster logic from other modules
-import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE } from './Ben2.js';
+import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE, handleDashAttack } from './Ben2.js';
 // Only import necessary functions for Toaster movement and cooldown, not the internal helpers
 import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel, handleHitAttack2 } from './Aaron.js';
 
@@ -440,10 +442,13 @@ function gameLoop() {
     // Update player and toaster movement based on keyboard input
     updatePlayerMovement(Butterfly, keysPressed);
     updateToasterMovement(IdleToaster, keysPressed);
+    
 
     // Decrement attack cooldowns
     if (tornadoCooldown > 0) tornadoCooldown--;
     if (hitCooldown > 0) hitCooldown--;
+      if (dashCooldown > 0) dashCooldown--; 
+      
     updateToastCooldown(); // Decrement toast cooldown
 
     // Update, draw, and filter sprites (remove those marked for removal)
@@ -460,6 +465,10 @@ function gameLoop() {
     allGameSprites.length = 0; // Clear the original array
     allGameSprites.push(...spritesToKeep); // Add back only the sprites that should remain
 
+     
+    if (keysPressed['x']) { // <--- ADD THIS FOR DASH ATTACK
+        handleDashAttack('x', dashCooldown, (duration) => dashCooldown = duration);
+    }
 
     // --- Handle Character-to-Character Collision (Butterfly vs Toaster) ---
     if (Butterfly && IdleToaster) {

@@ -31,6 +31,10 @@ const BUTTERFLY_COMMON_FRAMES_PER_ROW = 6; // Adjust to your sheet
 const IDLE_ANIMATION_SPEED = 10;
 const HIT_ANIMATION_SPEED = 5;
 export const BUTTERFLY_HIT_DAMAGE = 15; // Damage dealt by Butterfly's hit attack (new)
+const DASH_SPEED = 10; // How fast the dash is (adjust as needed)
+const DASH_DURATION_FRAMES = 10; // How many frames the dash lasts (adjust as needed)
+const DASH_COOLDOWN_DURATION = 60; // Cooldown for dash in frames (60 frames = 1 second at 60fps)
+
 
 // ===============================
 // 2. SPRITE INITIALIZATION
@@ -89,7 +93,7 @@ export function handleHitAttack(key, currentCooldown, setCooldownCallback) {
         let hitboxOffsetX = 0; // Initialize offsets for this attack
         let hitboxOffsetY = 0;
 
-        const HITBOX_EXTENSION_BASE = 10; // Change from 4 to 10
+        const HITBOX_EXTENSION_BASE = 4.5; // Change from 4 to 10
         const HITBOX_EXTENSION_SCALED = HITBOX_EXTENSION_BASE * Butterfly.scale;
 
         // Determine which hit animation to play based on last direction
@@ -191,10 +195,68 @@ export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
     }
 }
 
+// In Ben2.js, add this function below handleHitAttack and handleTornadoAttack
+// Handle Dash Attack (X key)
+export function handleDashAttack(key, currentCooldown, setCooldownCallback) {
+    if (key === 'x') {
+        if (currentCooldown > 0) {
+            // console.log("DEBUG: Dash attack on cooldown."); // Optional debug
+            return;
+        }
+        setCooldownCallback(DASH_COOLDOWN_DURATION); // Start dash cooldown
+
+        Butterfly.isDashing = true; // Set a flag indicating the Butterfly is dashing
+        Butterfly.dashFramesRemaining = DASH_DURATION_FRAMES; // Set duration counter
+
+        // Determine dash velocity based on last direction
+        switch (Butterfly.lastDirection) {
+            case 'up':
+                Butterfly.dashVx = 0;
+                Butterfly.dashVy = -DASH_SPEED;
+                break;
+            case 'down':
+                Butterfly.dashVx = 0;
+                Butterfly.dashVy = DASH_SPEED;
+                break;
+            case 'left':
+                Butterfly.dashVx = -DASH_SPEED;
+                Butterfly.dashVy = 0;
+                break;
+            case 'right':
+                Butterfly.dashVx = DASH_SPEED;
+                Butterfly.dashVy = 0;
+                break;
+            default: // Fallback to dashing right if no direction known
+                Butterfly.dashVx = DASH_SPEED;
+                Butterfly.dashVy = 0;
+                break;
+        }
+        // console.log(`DEBUG: Initiating dash in ${Butterfly.lastDirection} with speed (${Butterfly.dashVx}, ${Butterfly.dashVy})`); // Optional debug
+    }
+}
+
 // ===============================
 // 4. PLAYER MOVEMENT HANDLER
 // ===============================
 export function updatePlayerMovement(playerSprite, keys) {
+
+      if (playerSprite.isDashing) {
+        playerSprite.vx = playerSprite.dashVx; // Apply dash velocity
+        playerSprite.vy = playerSprite.dashVy;
+        playerSprite.dashFramesRemaining--;
+
+        if (playerSprite.dashFramesRemaining <= 0) {
+            playerSprite.isDashing = false; // Dash finished
+            playerSprite.vx = 0; // Stop dash movement
+            playerSprite.vy = 0;
+            // console.log("DEBUG: Dash finished."); // Optional debug
+            // Optionally, set a specific "dash_end" animation or revert to idle
+            // playerSprite.setAnimation('idle');
+        }
+        // During dash, prevent normal movement input from affecting vx/vy
+        // We've already set vx/vy to dash values, so just return or skip normal input processing.
+        // The rest of this function's animation/rotation logic still applies.
+    } else {
     playerSprite.vx = 0;
     playerSprite.vy = 0;
 
@@ -268,6 +330,7 @@ export function updatePlayerMovement(playerSprite, keys) {
         // Then set the next state (usually 'idle')
         playerSprite.setAnimation(playerSprite.currentAnimationConfig.nextState || 'idle');
     }
+}
 }
 
 // ===============================
