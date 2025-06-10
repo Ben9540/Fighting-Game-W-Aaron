@@ -401,7 +401,7 @@ export function resolveCollision(spriteA, spriteB) {
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE, handleDashAttack } from './Ben2.js';
 // Only import necessary functions for Toaster movement and cooldown, not the internal helpers
-import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel, handleHitAttack2 } from './Aaron.js';
+import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel, handleHitAttack2, ToasterHitDamage } from './Aaron.js';
 
 // ===============================
 // 9. GAME LOOP
@@ -488,6 +488,10 @@ function gameLoop() {
         if (IdleToaster.takeDamage) { // Ensure Toaster has the takeDamage method
             Butterfly.hasDealtDamageThisAttack = true;
             IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE); // Use the damage constant from Ben2.js
+        }
+        if (Butterfly.takeDamage) { // Ensure Toaster has the takeDamage method
+            IdleToaster.hasDealtDamageThisAttack = true;
+            IdleToaster.takeDamage(ToasterHitDamage); // Use the damage constant from Ben2.js
         }
     }
 
