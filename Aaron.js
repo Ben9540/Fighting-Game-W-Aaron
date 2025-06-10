@@ -1,4 +1,4 @@
-import { GameSprite, addSprite, removeSprite, TOASTER_MOVE_SPEED, imageAssets } from './script.js'; // Added removeSprite import
+import { GameSprite, addSprite, removeSprite, TOASTER_MOVE_SPEED, imageAssets, keysPressed } from './script.js'; // Added removeSprite import
 
 
 export let IdleToaster;
@@ -9,9 +9,9 @@ const TOASTER_FRAME_WIDTH = 8;
 const TOASTER_FRAME_HEIGHT = 8;
 const TOASTER_COLLISION_WIDTH = 8;
 const TOASTER_COLLISION_HEIGHT = 8;
-const TOASTER_COMMON_FRAMES_PER_ROW = 6; // Adjust to your sheet
+const TOASTER_COMMON_FRAMES_PER_ROW = 4; // Adjust to your sheet
 const IDLE_ANIMATION_SPEED = 10;
-const HIT_ANIMATION_SPEED = 5;
+const HIT_ANIMATION_SPEED = 7;
 
 export function initializeToasterSprite() {
     // Only create the toaster when this function is called
@@ -31,10 +31,9 @@ export function initializeToasterSprite() {
     IdleToaster.animations = {
         'idle': { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 0, end: 0, speed: IDLE_ANIMATION_SPEED, loop: true },
         // Add other animations as needed, e.g.:
-         'hitRight':  { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-         'hitLeft':   { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-         'hitUp':     { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
-        // 'hitDown':   { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }
+         'hitRight':  { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 9, end: 12, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+         'hitLeft':   { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 5, end: 8, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+         'hitUp':     { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 2,  end: 5, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }
     };
 
     IdleToaster.setAnimation('idle'); // Set initial animation state
@@ -62,6 +61,7 @@ export function updateToasterMovement(toasterSprite, keys) {
 
     // Handle jump
     if (keys.w) {
+        toasterSprite.lastDirection = 'up';
         if (jumpActive == false) {
             jump();
         }
@@ -149,24 +149,24 @@ function sleep(ms) {
 }
 
 async function jump() {
-    jumpActive = true;
-    const totalFrames = 20;
-    const jumpHeight = 60;
-    const frameDelay = 16; 
-
-    // Ascend
-    for (let i = 0; i < totalFrames; i++) {
-        IdleToaster.y -= jumpHeight / totalFrames;
-        IdleToaster.y = Math.max(0, IdleToaster.y);
-        await sleep(frameDelay);
-    }
-    // Descend
-    for (let i = 0;  i < totalFrames && IdleToaster.y < GROUND_Y; i++) {
-        IdleToaster.y += (jumpHeight / totalFrames) * 1.18;
-        IdleToaster.y = Math.min(GROUND_Y, IdleToaster.y);
-        await sleep(frameDelay)
-    }
-    jumpActive = false;
+        jumpActive = true;
+        const totalFrames = 20;
+        const jumpHeight = 60;
+        const frameDelay = 16; 
+    
+        // Ascend
+        for (let i = 0; i < totalFrames; i++) {
+            IdleToaster.y -= jumpHeight / totalFrames;
+            IdleToaster.y = Math.max(0, IdleToaster.y);
+            await sleep(frameDelay);
+        }
+        // Descend
+        for (let i = 0;  i < totalFrames && IdleToaster.y < GROUND_Y; i++) {
+            IdleToaster.y += (jumpHeight / totalFrames) * 1.18;
+            IdleToaster.y = Math.min(GROUND_Y, IdleToaster.y);
+            await sleep(frameDelay)
+        }
+        jumpActive = false;
 }
 
 let toastCooldown = 0;
@@ -216,12 +216,12 @@ export function updateToastCooldown() {
 
 
 
-export function handleHitAttack2(key, currentCooldown2, setCooldownCallback2) {
+export function handleHitAttack2(key, currentCooldown, setCooldownCallback) {
     if (key === 'p') {
-        if (currentCooldown2 > 0) {
+        if (currentCooldown > 0) {
             return;
         }
-        setCooldownCallback2(HIT_COOLDOWN_DURATION); // Start hit cooldown
+        setCooldownCallback(HIT_COOLDOWN_DURATION); // Start hit cooldown
 
         let hitAnimationState = 'idle'; // Default to idle if direction is unknown
         let hitboxOffsetX = 0; // Initialize offsets for this attack
@@ -231,15 +231,15 @@ export function handleHitAttack2(key, currentCooldown2, setCooldownCallback2) {
 
         // Determine which hit animation to play based on last direction
         switch (IdleToaster.lastDirection) {
-            case 'w':
+            case 'up':
                 hitAnimationState = 'hitUp';
-                hitboxOffsetY = -HITBOX_EXTENSION_SCALED; // Move hitbox up by scaled amount
+                hitboxOffsetY = -HITBOX_EXTENSION_SCALED/2; // Move hitbox up by scaled amount
                 break;
-            case 'a':
+            case 'left':
                 hitAnimationState = 'hitLeft';
                 hitboxOffsetX = -HITBOX_EXTENSION_SCALED; // Move hitbox left
                 break;
-            case 'd':
+            case 'right':
                 hitAnimationState = 'hitRight';
                 hitboxOffsetX = HITBOX_EXTENSION_SCALED; // Move hitbox right
                 break;

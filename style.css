@@ -99,9 +99,9 @@
       position: relative;
       margin: 20px;
       background-image: url('Aarons\ Sprites/Toaster.png');
-      background-position: -150px -150px;
+      background-position: 0px 0px;
       image-rendering: pixelated;
-      background-size: 450px;
+      background-size: 640px;
   }
 
   #char2p1 {
@@ -146,9 +146,9 @@
     position: relative;
     margin: 20px;
     background-image: url('Aarons\ Sprites/Toaster.png');
-    background-position: -150px -150px;
+    background-position: 0px 0px;
     image-rendering: pixelated;
-    background-size: 450px;
+    background-size: 640px;
 }
 
 #char2p2 {
