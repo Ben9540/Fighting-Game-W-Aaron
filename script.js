@@ -401,7 +401,7 @@ export function resolveCollision(spriteA, spriteB) {
 // Import player and toaster logic from other modules
 import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE, handleDashAttack } from './Ben2.js';
 // Only import necessary functions for Toaster movement and cooldown, not the internal helpers
-import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel, handleHitAttack2, ToasterHitDamage } from './Aaron.js';
+import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel, handleHitAttack2, ToasterHitDamage, blocking} from './Aaron.js';
 
 // ===============================
 // 9. GAME LOOP
@@ -487,7 +487,13 @@ function gameLoop() {
         // Apply damage to the Toaster
         if (IdleToaster.takeDamage) { // Ensure Toaster has the takeDamage method
             Butterfly.hasDealtDamageThisAttack = true;
-            IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE); // Use the damage constant from Ben2.js
+            if (blocking !== true) {
+                IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE);   
+            }
+            if (blocking == true) {
+                IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE)*0.75;   
+            }
+ // Use the damage constant from Ben2.js
         }
     }
     if (Butterfly && IdleToaster &&
@@ -521,7 +527,13 @@ function gameLoop() {
                 if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
                     console.log("Tornado collided with Toaster!");
                     if (IdleToaster.takeDamage) {
-                        IdleToaster.takeDamage(5); // Example damage from tornado
+                        if(blocking == false){
+                            IdleToaster.takeDamage(5);
+                        }
+                        else{
+
+                        }
+ // Example damage from tornado
                     }
                     resolveCollision(IdleToaster, projectile); // Push Toaster away
                     // DO NOT SET shouldRemove = true here for Tornado

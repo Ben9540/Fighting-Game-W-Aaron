@@ -52,12 +52,14 @@ export function updateToasterMovement(toasterSprite, keys) {
     toasterSprite.vy = 0;
 
     // Update lastDirection based on movement
-    if (keys.a) {
-        toasterSprite.vx = -TOASTER_MOVE_SPEED;
-        toasterSprite.lastDirection = 'left';
-    } else if (keys.d) {
-        toasterSprite.vx = TOASTER_MOVE_SPEED;
-        toasterSprite.lastDirection = 'right';
+    if(blocking == false){
+        if (keys.a) {
+            toasterSprite.vx = -TOASTER_MOVE_SPEED;
+            toasterSprite.lastDirection = 'left';
+        } else if (keys.d) {
+            toasterSprite.vx = TOASTER_MOVE_SPEED;
+            toasterSprite.lastDirection = 'right';
+        }
     }
 
     // Handle jump
@@ -71,29 +73,31 @@ export function updateToasterMovement(toasterSprite, keys) {
     }
 
     // Handle toast charge and shot
-    if (keys.i && !toasterSprite.isChargingToast && toastCooldown === 0) { // Only start charging if not already and no cooldown
-        // Start charging
-        toasterSprite.isChargingToast = true;
-        toasterSprite.toastChargeStartTime = performance.now(); // Get current time
-        toasterSprite.currentToastSprite = createChargingToast(); // Create the toast sprite
-        // Link the toast to its caster (Toaster) for collision logic later
-        toasterSprite.currentToastSprite.caster = toasterSprite;
-        console.log("Started charging toast.");
-    } else if (!keys.i && toasterSprite.isChargingToast) {
-        // Key 'i' was released, trigger the shot
-        toasterSprite.isChargingToast = false;
-        const chargeDuration = performance.now() - toasterSprite.toastChargeStartTime;
-        let chargeLevel = 1;
-        if (chargeDuration > 1000) chargeLevel = 2; // Example: >0.5s is level 2
-        if (chargeDuration > 2000) chargeLevel = 3; // Example: >1.5s is level 3
-
-        if (toasterSprite.currentToastSprite) {
-            shootToast(toasterSprite.currentToastSprite, chargeLevel);
-            toasterSprite.currentToastSprite = null; // Clear the reference to the now flying toast
+    if(blocking == false){
+        if (keys.i && !toasterSprite.isChargingToast && toastCooldown === 0) { // Only start charging if not already and no cooldown
+            // Start charging
+            toasterSprite.isChargingToast = true;
+            toasterSprite.toastChargeStartTime = performance.now(); // Get current time
+            toasterSprite.currentToastSprite = createChargingToast(); // Create the toast sprite
+            // Link the toast to its caster (Toaster) for collision logic later
+            toasterSprite.currentToastSprite.caster = toasterSprite;
+            console.log("Started charging toast.");
+        } else if (!keys.i && toasterSprite.isChargingToast) {
+            // Key 'i' was released, trigger the shot
+            toasterSprite.isChargingToast = false;
+            const chargeDuration = performance.now() - toasterSprite.toastChargeStartTime;
+            let chargeLevel = 1;
+            if (chargeDuration > 1000) chargeLevel = 2; // Example: >0.5s is level 2
+            if (chargeDuration > 2000) chargeLevel = 3; // Example: >1.5s is level 3
+    
+            if (toasterSprite.currentToastSprite) {
+                shootToast(toasterSprite.currentToastSprite, chargeLevel);
+                toasterSprite.currentToastSprite = null; // Clear the reference to the now flying toast
+            }
+            console.log(`Released 'i', charge duration: ${chargeDuration}, level: ${chargeLevel}`);
         }
-        console.log(`Released 'i', charge duration: ${chargeDuration}, level: ${chargeLevel}`);
     }
-
+    
     // If still charging, update toast position and animation
     if (toasterSprite.isChargingToast && toasterSprite.currentToastSprite) {
         toasterSprite.currentToastSprite.x = toasterSprite.x + toasterSprite.collisionWidth / 2 - 4; // Centered above toaster
@@ -218,52 +222,65 @@ export function updateToastCooldown() {
 
 
 export function handleHitAttack2(key, currentCooldown, setCooldownCallback) {
-    if (key === 'p') {
-        if (currentCooldown > 0) {
-            return;
+    if(blocking == false){
+        if (key === 'p') {
+            if (currentCooldown > 0) {
+                return;
+            }
+            IdleToaster.hasDealtDamageThisAttack2 = false;
+            setCooldownCallback(HIT_COOLDOWN_DURATION); // Start hit cooldown
+    
+            let hitAnimationState = 'idle'; // Default to idle if direction is unknown
+            let hitboxOffsetX = 0; // Initialize offsets for this attack
+            let hitboxOffsetY = 0;
+    
+            const HITBOX_EXTENSION_SCALED = 4 * IdleToaster.scale;
+    
+            // Determine which hit animation to play based on last direction
+            switch (IdleToaster.lastDirection) {
+                case 'up':
+                    hitAnimationState = 'hitUp';
+                    hitboxOffsetY = -HITBOX_EXTENSION_SCALED/2; // Move hitbox up by scaled amount
+                    break;
+                case 'left':
+                    hitAnimationState = 'hitLeft';
+                    hitboxOffsetX = -HITBOX_EXTENSION_SCALED; // Move hitbox left
+                    break;
+                case 'right':
+                    hitAnimationState = 'hitRight';
+                    hitboxOffsetX = HITBOX_EXTENSION_SCALED; // Move hitbox right
+                    break;
+                default:
+                    hitAnimationState = 'hitRight'; // Fallback
+                    hitboxOffsetX = HITBOX_EXTENSION_SCALED;
+                    break;
+            }
+    
+            IdleToaster.setAnimation(hitAnimationState);
+            // Optionally stop movement during hit animation
+            // Butterfly.vx = 0;
+            // Butterfly.vy = 0;
+    
+            IdleToaster.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
+    
+            console.log(`Toaster performing ${hitAnimationState} attack with hitbox offset (${hitboxOffsetX}, ${hitboxOffsetY}).`);
+    
+            // --- NEW: Check for collision with Toaster and apply damage
+            // We'll pass `IdleToaster` as an argument or import it directly if needed,
+            // but for now, the collision check logic happens in script.js gameLoop
+            // after the hit animation and hitbox are set.
+            // This function sets up the attack, the game loop handles its effect.
         }
-        IdleToaster.hasDealtDamageThisAttack2 = false;
-        setCooldownCallback(HIT_COOLDOWN_DURATION); // Start hit cooldown
-
-        let hitAnimationState = 'idle'; // Default to idle if direction is unknown
-        let hitboxOffsetX = 0; // Initialize offsets for this attack
-        let hitboxOffsetY = 0;
-
-        const HITBOX_EXTENSION_SCALED = 4 * IdleToaster.scale;
-
-        // Determine which hit animation to play based on last direction
-        switch (IdleToaster.lastDirection) {
-            case 'up':
-                hitAnimationState = 'hitUp';
-                hitboxOffsetY = -HITBOX_EXTENSION_SCALED/2; // Move hitbox up by scaled amount
-                break;
-            case 'left':
-                hitAnimationState = 'hitLeft';
-                hitboxOffsetX = -HITBOX_EXTENSION_SCALED; // Move hitbox left
-                break;
-            case 'right':
-                hitAnimationState = 'hitRight';
-                hitboxOffsetX = HITBOX_EXTENSION_SCALED; // Move hitbox right
-                break;
-            default:
-                hitAnimationState = 'hitRight'; // Fallback
-                hitboxOffsetX = HITBOX_EXTENSION_SCALED;
-                break;
-        }
-
-        IdleToaster.setAnimation(hitAnimationState);
-        // Optionally stop movement during hit animation
-        // Butterfly.vx = 0;
-        // Butterfly.vy = 0;
-
-        IdleToaster.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
-
-        console.log(`Toaster performing ${hitAnimationState} attack with hitbox offset (${hitboxOffsetX}, ${hitboxOffsetY}).`);
-
-        // --- NEW: Check for collision with Toaster and apply damage
-        // We'll pass `IdleToaster` as an argument or import it directly if needed,
-        // but for now, the collision check logic happens in script.js gameLoop
-        // after the hit animation and hitbox are set.
-        // This function sets up the attack, the game loop handles its effect.
     }
 }
+
+export let blocking = false;
+
+
+    if(keysPressed === "o") {
+            blocking = true
+        }  
+    document.addEventListener("keyup", (event) => {
+            blocking = false 
+    })
+    
