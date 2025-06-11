@@ -489,12 +489,17 @@ function gameLoop() {
             Butterfly.hasDealtDamageThisAttack = true;
             IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE); // Use the damage constant from Ben2.js
         }
+    }
+    if (Butterfly && IdleToaster &&
+        IdleToaster.currentAnimationState.startsWith('hit') && // Check if Butterfly is in a 'hit' animation
+        (IdleToaster.hitboxOffsetX !== 0 || IdleToaster.hitboxOffsetY !== 0) &&  (!IdleToaster.hasDealtDamageThisAttack2) && // Check if Butterfly's hitbox is extended
+        checkCollision(Butterfly, IdleToaster)) { // Check for collision with Toaster
+        // Apply damage to the Toaster
         if (Butterfly.takeDamage) { // Ensure Toaster has the takeDamage method
-            IdleToaster.hasDealtDamageThisAttack = true;
-            IdleToaster.takeDamage(ToasterHitDamage); // Use the damage constant from Ben2.js
+            IdleToaster.hasDealtDamageThisAttack2 = true;
+            Butterfly.takeDamage(ToasterHitDamage); // Use the damage constant from Ben2.js
         }
     }
-
     // --- Handle Projectile Collisions (Tornado vs Characters, Toast vs Characters) ---
     if (Butterfly && IdleToaster) {
         for (let i = 0; i < allGameSprites.length; i++) {

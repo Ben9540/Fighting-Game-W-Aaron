@@ -222,6 +222,7 @@ export function handleHitAttack2(key, currentCooldown, setCooldownCallback) {
         if (currentCooldown > 0) {
             return;
         }
+        IdleToaster.hasDealtDamageThisAttack2 = false;
         setCooldownCallback(HIT_COOLDOWN_DURATION); // Start hit cooldown
 
         let hitAnimationState = 'idle'; // Default to idle if direction is unknown
@@ -257,7 +258,7 @@ export function handleHitAttack2(key, currentCooldown, setCooldownCallback) {
 
         IdleToaster.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
 
-        console.log(`Butterfly performing ${hitAnimationState} attack with hitbox offset (${hitboxOffsetX}, ${hitboxOffsetY}).`);
+        console.log(`Toaster performing ${hitAnimationState} attack with hitbox offset (${hitboxOffsetX}, ${hitboxOffsetY}).`);
 
         // --- NEW: Check for collision with Toaster and apply damage
         // We'll pass `IdleToaster` as an argument or import it directly if needed,
