@@ -66,7 +66,9 @@ const IMAGE_PATHS = {
     IdleToaster: 'Aarons Sprites/Toaster.png',
     ground: 'Ground.png',
     toastimg: 'Aarons Sprites/Bread.png', // Assumed to be the sprite sheet for toast projectiles
-    background: 'bg.png'
+    background: 'bg.png',
+    blockp1: 'Block P1.png',
+    blockp2: 'Block P2.png'
 };
 
 // Loads all images and calls callback when done
