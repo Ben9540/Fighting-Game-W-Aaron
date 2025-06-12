@@ -218,7 +218,16 @@ export function updateToastCooldown() {
     }
 }
 
-
+export function bloackingToaster() {
+    let blocking = false;
+ if(keysPressed === "o") {
+            blocking = true
+        }  
+    document.addEventListener("keyup", (event) => {
+            blocking = false 
+    })
+    
+}
 
 
 export function handleHitAttack2(key, currentCooldown, setCooldownCallback) {
@@ -277,10 +286,4 @@ export function handleHitAttack2(key, currentCooldown, setCooldownCallback) {
 export let blocking = false;
 
 
-    if(keysPressed === "o") {
-            blocking = true
-        }  
-    document.addEventListener("keyup", (event) => {
-            blocking = false 
-    })
-    
+   
