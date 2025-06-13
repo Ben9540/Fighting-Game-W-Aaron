@@ -78,7 +78,7 @@ export const keysPressed = {
 export const imageAssets = {};
 const IMAGE_PATHS = {
     Butterfly: 'Bens Sprites/Butterfly.png', // Original Butterfly sprite sheet
-    ButterflyP1: 'Bens Sprites/Butterfly.png', // New colorway for P1 Butterfly
+    ButterflyP1: 'Bens Sprites/Butterfly2.png', // New colorway for P1 Butterfly
     tornado: 'Bens Sprites/Tornado.png',
     IdleToaster: 'Aarons Sprites/Toaster.png', // Original Toaster sprite sheet (for NPC, or P2)
     ToasterP1: 'Aarons Sprites/Toaster.png', // New colorway for P1 Toaster
