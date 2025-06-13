@@ -3,347 +3,377 @@
 // ===============================
 import {
     GameSprite,
-    addSprite,
+    // addSprite, // Dynamically imported where needed for projectiles
     BUTTERFLY_MOVE_SPEED,
     TORNADO_PROJECTILE_SPEED,
     TORNADO_LIFETIME_FRAMES,
     TORNADO_COOLDOWN_DURATION,
     HIT_COOLDOWN_DURATION,
-    imageAssets
+    imageAssets,
+    canvas // Import canvas to check boundaries for dash
 } from './script.js';
 
-// Tornado sprite sheet and animation constants
-const TORNADO_SPRITESHEET_KEY = 'tornado'; // Matches the key in script.js IMAGE_PATHS
-const TORNADO_FRAME_WIDTH = 8; // Tornado frame size
+// Tornado sprite sheet and animation constants (shared)
+const TORNADO_SPRITESHEET_KEY = 'tornado';
+const TORNADO_FRAME_WIDTH = 8;
 const TORNADO_FRAME_HEIGHT = 8;
 const TORNADO_COLLISION_WIDTH = 8;
 const TORNADO_COLLISION_HEIGHT = 8;
 const TORNADO_ANIMATION_SPEED = 5;
 
-// Butterfly sprite sheet and animation constants
-export let Butterfly; // Will be initialized in initializePlayerSprite()
-const BUTTERFLY_SPRITESHEET_KEY = 'Butterfly'; // Key for imageAssets
+// Butterfly sprite sheet and animation constants (shared across Butterfly types)
 const BUTTERFLY_FRAME_WIDTH = 16;
 const BUTTERFLY_FRAME_HEIGHT = 16;
 const BUTTERFLY_COLLISION_WIDTH = 8;
 const BUTTERFLY_COLLISION_HEIGHT = 8;
-const BUTTERFLY_COMMON_FRAMES_PER_ROW = 6; // Adjust to your sheet
+const BUTTERFLY_COMMON_FRAMES_PER_ROW = 6;
 const IDLE_ANIMATION_SPEED = 10;
 const HIT_ANIMATION_SPEED = 5;
-export const BUTTERFLY_HIT_DAMAGE = 15; // Damage dealt by Butterfly's hit attack (new)
-const DASH_SPEED = 10; // How fast the dash is (adjust as needed)
-const DASH_DURATION_FRAMES = 10; // How many frames the dash lasts (adjust as needed)
-const DASH_COOLDOWN_DURATION = 60; // Cooldown for dash in frames (60 frames = 1 second at 60fps)
+export const BUTTERFLY_HIT_DAMAGE = 15; // Damage dealt by Butterfly's hit attack (shared)
+const DASH_SPEED = 10;
+const DASH_DURATION_FRAMES = 10;
+const DASH_COOLDOWN_DURATION = 60;
 
 
 // ===============================
-// 2. SPRITE INITIALIZATION
+// PLAYER 1 BUTTERFLY (WASD, I, O, P Keys) - Uses ButterflyP1.png
 // ===============================
-export function initializePlayerSprite() {
-    // Only create the butterfly when this function is called
-    Butterfly = new GameSprite(
-        imageAssets[BUTTERFLY_SPRITESHEET_KEY], // Use the pre-loaded combined image
-        200, 100, // Initial x, y (top-left of the 8x8 collision box)
-        BUTTERFLY_FRAME_WIDTH, BUTTERFLY_FRAME_HEIGHT, // Visual frame dimensions (16x16)
-        BUTTERFLY_COLLISION_WIDTH, BUTTERFLY_COLLISION_HEIGHT, // Collision box dimensions (8x8)
-        IDLE_ANIMATION_SPEED, // Default animation speed (used if no animation config is set)
-        4.5 // scale
-        // lifeTime defaults to -1
+export let ButterflyP1; // Global instance for Player 1 Butterfly
+
+// Initializes/configures the Player 1 Butterfly sprite
+export function initializePlayer1ButterflySprite(initialX, initialY) {
+    ButterflyP1 = new GameSprite(
+        imageAssets.ButterflyP1, // Use P1 specific image
+        initialX, initialY,
+        BUTTERFLY_FRAME_WIDTH, BUTTERFLY_FRAME_HEIGHT,
+        BUTTERFLY_COLLISION_WIDTH, BUTTERFLY_COLLISION_HEIGHT,
+        IDLE_ANIMATION_SPEED,
+        4.5, // scale
+        -1, // lifeTime
+        'player1-butterfly' // Tag for identification
     );
-    // Set Butterfly specific health
+    ButterflyP1.maxHealth = 100;
+    ButterflyP1.health = ButterflyP1.maxHealth;
+    ButterflyP1.hasDealtDamageThisAttack = false;
+    ButterflyP1.isDashing = false;
+    ButterflyP1.dashVx = 0;
+    ButterflyP1.dashVy = 0;
+    ButterflyP1.dashFramesRemaining = 0;
+
+    ButterflyP1.animations = {
+        'idle':      { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 0,  end: 4,  speed: IDLE_ANIMATION_SPEED, loop: true },
+        'hitRight':  { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+        'hitLeft':   { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+        'hitUp':     { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
+        'hitDown':   { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }
+    };
+    ButterflyP1.setAnimation('idle');
+    ButterflyP1.lastDirection = 'right';
+    import('./script.js').then(({ addSprite }) => { addSprite(ButterflyP1); }); // Add to global sprite array
+}
+
+// Update movement for Player 1 Butterfly
+export function updatePlayer1ButterflyMovement(keys) {
+    const playerSprite = ButterflyP1; // Directly reference the global P1 Butterfly instance
+    if (!playerSprite) return; // Guard in case not initialized
+
+    if (playerSprite.isDashing) {
+        playerSprite.vx = playerSprite.dashVx;
+        playerSprite.vy = playerSprite.dashVy;
+        playerSprite.dashFramesRemaining--;
+        if (playerSprite.dashFramesRemaining <= 0) {
+            playerSprite.isDashing = false;
+            playerSprite.vx = 0;
+            playerSprite.vy = 0;
+        }
+    } else {
+        playerSprite.vx = 0;
+        playerSprite.vy = 0;
+        if (keys.ArrowLeft) { // Use WASD keys for P1
+            playerSprite.vx = -BUTTERFLY_MOVE_SPEED;
+            playerSprite.lastDirection = 'left';
+        } else if (keys.ArrowRight) {
+            playerSprite.vx = BUTTERFLY_MOVE_SPEED;
+            playerSprite.lastDirection = 'right';
+        }
+        if (keys.ArrowUp) {
+            playerSprite.vy = -BUTTERFLY_MOVE_SPEED;
+            if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'up';
+        } else if (keys.ArrowDown) {
+            playerSprite.vy = BUTTERFLY_MOVE_SPEED;
+            if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'down';
+        }
+        let desiredRotation = 0;
+        const tiltAngle = playerSprite.rotationSpeed;
+        if (playerSprite.vx > 0) { desiredRotation = tiltAngle; } else if (playerSprite.vx < 0) { desiredRotation = -tiltAngle; } else { desiredRotation = 0; }
+        playerSprite.currentRotation = playerSprite.currentRotation * (1 - playerSprite.rotationSmoothness) + desiredRotation * playerSprite.rotationSmoothness;
+
+        if (playerSprite.vx === 0 && playerSprite.vy === 0 && !playerSprite.currentAnimationState.startsWith('hit')) {
+            if (playerSprite.currentAnimationState !== 'idle') { playerSprite.setAnimation('idle'); }
+        } else if (playerSprite.vx !== 0 || playerSprite.vy !== 0) {
+            if (!playerSprite.currentAnimationState.startsWith('hit')) {
+                if (playerSprite.currentAnimationState !== 'idle') { playerSprite.setAnimation('idle'); }
+            }
+        }
+        if (playerSprite.currentAnimationConfig && !playerSprite.currentAnimationConfig.loop && playerSprite.currentFrame >= playerSprite.currentAnimationConfig.end) {
+            if (playerSprite.currentAnimationState.startsWith('hit')) { playerSprite.resetHitboxOffset(); }
+            playerSprite.setAnimation(playerSprite.currentAnimationConfig.nextState || 'idle');
+        }
+    }
+}
+
+// Handle P1 Butterfly hit attack (P key)
+export function handlePlayer1ButterflyHitAttack(key, currentCooldown, setCooldownCallback) {
+    const playerSprite = ButterflyP1; // Directly reference the global P1 Butterfly instance
+    if (!playerSprite || key === null) return;
+
+    if (key === 'p') {
+        if (currentCooldown > 0) { return; }
+        setCooldownCallback(HIT_COOLDOWN_DURATION);
+        playerSprite.hasDealtDamageThisAttack = false;
+        let hitAnimationState = 'idle'; let hitboxOffsetX = 0; let hitboxOffsetY = 0;
+        const HITBOX_EXTENSION_BASE = 4.5;
+        const HITBOX_EXTENSION_SCALED = HITBOX_EXTENSION_BASE * playerSprite.scale;
+        switch (playerSprite.lastDirection) {
+            case 'up': hitAnimationState = 'hitUp'; hitboxOffsetY = -HITBOX_EXTENSION_SCALED; break;
+            case 'down': hitAnimationState = 'hitDown'; hitboxOffsetY = HITBOX_EXTENSION_SCALED; break;
+            case 'left': hitAnimationState = 'hitLeft'; hitboxOffsetX = -HITBOX_EXTENSION_SCALED; break;
+            case 'right': hitAnimationState = 'hitRight'; hitboxOffsetX = HITBOX_EXTENSION_SCALED; break;
+            default: hitAnimationState = 'hitRight'; hitboxOffsetX = HITBOX_EXTENSION_SCALED; break;
+        }
+        playerSprite.setAnimation(hitAnimationState);
+        playerSprite.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
+        console.log(`P1 Butterfly performing ${hitAnimationState} attack.`);
+    }
+}
+
+// Handle P1 Butterfly tornado attack (I key)
+export function handlePlayer1ButterflyTornadoAttack(key, currentCooldown, setCooldownCallback) {
+    const playerSprite = ButterflyP1; // Directly reference the global P1 Butterfly instance
+    if (!playerSprite || key === null) return;
+
+    if (key === 'i') {
+        if (currentCooldown > 0) { return; }
+        setCooldownCallback(TORNADO_COOLDOWN_DURATION);
+        let launchVx = 0; let launchVy = 0;
+        if (playerSprite.vx !== 0 || playerSprite.vy !== 0) {
+            const currentSpeed = Math.sqrt(playerSprite.vx * playerSprite.vx + playerSprite.vy * playerSprite.vy);
+            if (currentSpeed > 0) {
+                launchVx = (playerSprite.vx / currentSpeed) * TORNADO_PROJECTILE_SPEED;
+                launchVy = (playerSprite.vy / currentSpeed) * TORNADO_PROJECTILE_SPEED;
+            }
+        } else {
+            switch (playerSprite.lastDirection) {
+                case 'up': launchVy = -TORNADO_PROJECTILE_SPEED; break;
+                case 'down': launchVy = TORNADO_PROJECTILE_SPEED; break;
+                case 'left': launchVx = -TORNADO_PROJECTILE_SPEED; break;
+                case 'right': launchVx = TORNADO_PROJECTILE_SPEED; break;
+                default: launchVx = TORNADO_PROJECTILE_SPEED; break;
+            }
+        }
+        const newTornado = new GameSprite(
+            imageAssets[TORNADO_SPRITESHEET_KEY],
+            playerSprite.x + (playerSprite.collisionWidth * playerSprite.scale) / 2 - (TORNADO_COLLISION_WIDTH * playerSprite.scale) / 2,
+            playerSprite.y + (playerSprite.collisionHeight * playerSprite.scale) / 2 - (TORNADO_COLLISION_HEIGHT * playerSprite.scale) / 2,
+            TORNADO_FRAME_WIDTH, TORNADO_FRAME_HEIGHT,
+            TORNADO_COLLISION_WIDTH, TORNADO_COLLISION_HEIGHT,
+            TORNADO_ANIMATION_SPEED, playerSprite.scale, TORNADO_LIFETIME_FRAMES, 'tornado'
+        );
+        newTornado.vx = launchVx; newTornado.vy = launchVy; newTornado.caster = playerSprite;
+        newTornado.animations = { 'default': { framesPerRow: 3, start: 0, end: 6, speed: TORNADO_ANIMATION_SPEED, loop: true } };
+        newTornado.setAnimation('default');
+        import('./script.js').then(({ addSprite }) => { addSprite(newTornado); });
+    }
+}
+
+// Handle P1 Butterfly dash attack (O key)
+export function handlePlayer1ButterflyDashAttack(key, currentCooldown, setCooldownCallback) {
+    const playerSprite = ButterflyP1; // Directly reference the global P1 Butterfly instance
+    if (!playerSprite || key === null) return;
+
+    if (key === 'o') {
+        if (currentCooldown > 0) { return; }
+        setCooldownCallback(DASH_COOLDOWN_DURATION);
+        playerSprite.isDashing = true;
+        playerSprite.dashFramesRemaining = DASH_DURATION_FRAMES;
+        switch (playerSprite.lastDirection) {
+            case 'up': playerSprite.dashVx = 0; playerSprite.dashVy = -DASH_SPEED; break;
+            case 'down': playerSprite.dashVx = 0; playerSprite.dashVy = DASH_SPEED; break;
+            case 'left': playerSprite.dashVx = -DASH_SPEED; playerSprite.dashVy = 0; break;
+            case 'right': playerSprite.dashVx = DASH_SPEED; playerSprite.dashVy = 0; break;
+            default: playerSprite.dashVx = DASH_SPEED; playerSprite.dashVy = 0; break;
+        }
+    }
+}
+
+
+// ===============================
+// PLAYER 2 BUTTERFLY (Arrow Keys, Z, C, X Keys) - Uses original Butterfly.png
+// ===============================
+export let Butterfly; // Original global instance for Player 2 Butterfly
+
+// Initializes/configures the Player 2 Butterfly sprite
+export function initializePlayer2ButterflySprite(initialX, initialY) {
+    Butterfly = new GameSprite(
+        imageAssets.Butterfly, // Use original Butterfly image
+        initialX, initialY,
+        BUTTERFLY_FRAME_WIDTH, BUTTERFLY_FRAME_HEIGHT,
+        BUTTERFLY_COLLISION_WIDTH, BUTTERFLY_COLLISION_HEIGHT,
+        IDLE_ANIMATION_SPEED,
+        4.5, // scale
+        -1, // lifeTime
+        'player2-butterfly' // Tag for identification
+    );
     Butterfly.maxHealth = 100;
     Butterfly.health = Butterfly.maxHealth;
-    Butterfly.hasDealtDamageThisAttack = false; // Flag to track if damage has been dealt in current attack
+    Butterfly.hasDealtDamageThisAttack = false;
+    Butterfly.isDashing = false;
+    Butterfly.dashVx = 0;
+    Butterfly.dashVy = 0;
+    Butterfly.dashFramesRemaining = 0;
 
-
-    addSprite(Butterfly); // Add it to the main sprite array
-    console.log("IdleButterfly initialized and added."); // Debug log
-
-    // Define animation states for the butterfly
     Butterfly.animations = {
         'idle':      { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 0,  end: 4,  speed: IDLE_ANIMATION_SPEED, loop: true },
         'hitRight':  { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 19, end: 25, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
         'hitLeft':   { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 11, end: 18, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
         'hitUp':     { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 5,  end: 10, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' },
         'hitDown':   { framesPerRow: BUTTERFLY_COMMON_FRAMES_PER_ROW, start: 26, end: 32, speed: HIT_ANIMATION_SPEED, loop: false, nextState: 'idle' }
-        // Adjust frame numbers and speed based on your actual sprite sheet layout
     };
-
-    Butterfly.setAnimation('idle'); // Set initial animation state
-    Butterfly.lastDirection = 'right'; // Track last facing direction
+    Butterfly.setAnimation('idle');
+    Butterfly.lastDirection = 'right';
+    import('./script.js').then(({ addSprite }) => { addSprite(Butterfly); }); // Add to global sprite array
 }
 
-// ===============================
-// 3. PLAYER ATTACK HANDLERS
-// ===============================
+// Update movement for Player 2 Butterfly
+export function updatePlayer2ButterflyMovement(keys) {
+    const playerSprite = Butterfly; // Directly reference the global P2 Butterfly instance
+    if (!playerSprite) return; // Guard in case not initialized
 
-// Handle hit attack (C key)
-// Modified to use the imported checkCollision and apply damage
-export function handleHitAttack(key, currentCooldown, setCooldownCallback) {
-    if (key === 'c') {
-        if (currentCooldown > 0) {
-            return;
+    if (playerSprite.isDashing) {
+        playerSprite.vx = playerSprite.dashVx;
+        playerSprite.vy = playerSprite.dashVy;
+        playerSprite.dashFramesRemaining--;
+        if (playerSprite.dashFramesRemaining <= 0) {
+            playerSprite.isDashing = false;
+            playerSprite.vx = 0;
+            playerSprite.vy = 0;
         }
-        setCooldownCallback(HIT_COOLDOWN_DURATION); // Start hit cooldown
-
-        // When starting a new attack, reset the damage dealt flag
-        Butterfly.hasDealtDamageThisAttack = false;
-
-        let hitAnimationState = 'idle'; // Default to idle if direction is unknown
-        let hitboxOffsetX = 0; // Initialize offsets for this attack
-        let hitboxOffsetY = 0;
-
-        const HITBOX_EXTENSION_BASE = 4.5; // Change from 4 to 10
-        const HITBOX_EXTENSION_SCALED = HITBOX_EXTENSION_BASE * Butterfly.scale;
-
-        // Determine which hit animation to play based on last direction
-        switch (Butterfly.lastDirection) {
-            case 'up':
-                hitAnimationState = 'hitUp';
-                hitboxOffsetY = -HITBOX_EXTENSION_SCALED; // Move hitbox up by scaled amount
-                break;
-            case 'down':
-                hitAnimationState = 'hitDown';
-                hitboxOffsetY = HITBOX_EXTENSION_SCALED; // Move hitbox down
-                break;
-            case 'left':
-                hitAnimationState = 'hitLeft';
-                hitboxOffsetX = -HITBOX_EXTENSION_SCALED; // Move hitbox left
-                break;
-            case 'right':
-                hitAnimationState = 'hitRight';
-                hitboxOffsetX = HITBOX_EXTENSION_SCALED; // Move hitbox right
-                break;
-            default:
-                hitAnimationState = 'hitRight'; // Fallback
-                hitboxOffsetX = HITBOX_EXTENSION_SCALED;
-                break;
+    } else {
+        playerSprite.vx = 0;
+        playerSprite.vy = 0;
+        if (keys.ArrowLeft) { // Use Arrow keys for P2
+            playerSprite.vx = -BUTTERFLY_MOVE_SPEED;
+            playerSprite.lastDirection = 'left';
+        } else if (keys.ArrowRight) {
+            playerSprite.vx = BUTTERFLY_MOVE_SPEED;
+            playerSprite.lastDirection = 'right';
         }
+        if (keys.ArrowUp) {
+            playerSprite.vy = -BUTTERFLY_MOVE_SPEED;
+            if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'up';
+        } else if (keys.ArrowDown) {
+            playerSprite.vy = BUTTERFLY_MOVE_SPEED;
+            if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'down';
+        }
+        let desiredRotation = 0;
+        const tiltAngle = playerSprite.rotationSpeed;
+        if (playerSprite.vx > 0) { desiredRotation = tiltAngle; } else if (playerSprite.vx < 0) { desiredRotation = -tiltAngle; } else { desiredRotation = 0; }
+        playerSprite.currentRotation = playerSprite.currentRotation * (1 - playerSprite.rotationSmoothness) + desiredRotation * playerSprite.rotationSmoothness;
 
-        Butterfly.setAnimation(hitAnimationState);
-        // Optionally stop movement during hit animation
-        // Butterfly.vx = 0;
-        // Butterfly.vy = 0;
-
-        Butterfly.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
-
-        console.log(`Butterfly performing ${hitAnimationState} attack with hitbox offset (${hitboxOffsetX}, ${hitboxOffsetY}).`);
-
-        // --- NEW: Check for collision with Toaster and apply damage
-        // We'll pass `IdleToaster` as an argument or import it directly if needed,
-        // but for now, the collision check logic happens in script.js gameLoop
-        // after the hit animation and hitbox are set.
-        // This function sets up the attack, the game loop handles its effect.
+        if (playerSprite.vx === 0 && playerSprite.vy === 0 && !playerSprite.currentAnimationState.startsWith('hit')) {
+            if (playerSprite.currentAnimationState !== 'idle') { playerSprite.setAnimation('idle'); }
+        } else if (playerSprite.vx !== 0 || playerSprite.vy !== 0) {
+            if (!playerSprite.currentAnimationState.startsWith('hit')) {
+                if (playerSprite.currentAnimationState !== 'idle') { playerSprite.setAnimation('idle'); }
+            }
+        }
+        if (playerSprite.currentAnimationConfig && !playerSprite.currentAnimationConfig.loop && playerSprite.currentFrame >= playerSprite.currentAnimationConfig.end) {
+            if (playerSprite.currentAnimationState.startsWith('hit')) { playerSprite.resetHitboxOffset(); }
+            playerSprite.setAnimation(playerSprite.currentAnimationConfig.nextState || 'idle');
+        }
     }
 }
 
-// Handle tornado attack (Z key)
-export function handleTornadoAttack(key, currentCooldown, setCooldownCallback) {
-    if (key === 'z') {
-        if (currentCooldown > 0) {
-            return;
+// Handle P2 Butterfly hit attack (C key)
+export function handlePlayer2ButterflyHitAttack(key, currentCooldown, setCooldownCallback) {
+    const playerSprite = Butterfly; // Directly reference the global P2 Butterfly instance
+    if (!playerSprite || key === null) return;
+
+    if (key === 'c') {
+        if (currentCooldown > 0) { return; }
+        setCooldownCallback(HIT_COOLDOWN_DURATION);
+        playerSprite.hasDealtDamageThisAttack = false;
+        let hitAnimationState = 'idle'; let hitboxOffsetX = 0; let hitboxOffsetY = 0;
+        const HITBOX_EXTENSION_BASE = 4.5;
+        const HITBOX_EXTENSION_SCALED = HITBOX_EXTENSION_BASE * playerSprite.scale;
+        switch (playerSprite.lastDirection) {
+            case 'up': hitAnimationState = 'hitUp'; hitboxOffsetY = -HITBOX_EXTENSION_SCALED; break;
+            case 'down': hitAnimationState = 'hitDown'; hitboxOffsetY = HITBOX_EXTENSION_SCALED; break;
+            case 'left': hitAnimationState = 'hitLeft'; hitboxOffsetX = -HITBOX_EXTENSION_SCALED; break;
+            case 'right': hitAnimationState = 'hitRight'; hitboxOffsetX = HITBOX_EXTENSION_SCALED; break;
+            default: hitAnimationState = 'hitRight'; hitboxOffsetX = HITBOX_EXTENSION_SCALED; break;
         }
-        setCooldownCallback(TORNADO_COOLDOWN_DURATION); // Start tornado cooldown
+        playerSprite.setAnimation(hitAnimationState);
+        playerSprite.setHitboxOffset(hitboxOffsetX, hitboxOffsetY);
+        console.log(`P2 Butterfly performing ${hitAnimationState} attack.`);
+    }
+}
 
-        let launchVx = 0;
-        let launchVy = 0;
+// Handle P2 Butterfly tornado attack (Z key)
+export function handlePlayer2ButterflyTornadoAttack(key, currentCooldown, setCooldownCallback) {
+    const playerSprite = Butterfly; // Directly reference the global P2 Butterfly instance
+    if (!playerSprite || key === null) return;
 
-        // Calculate launch direction based on current movement
-        if (Butterfly.vx !== 0 || Butterfly.vy !== 0) {
-            const butterflyCurrentSpeed = Math.sqrt(Butterfly.vx * Butterfly.vx + Butterfly.vy * Butterfly.vy);
-            if (butterflyCurrentSpeed > 0) {
-                launchVx = (Butterfly.vx / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
-                launchVy = (Butterfly.vy / butterflyCurrentSpeed) * TORNADO_PROJECTILE_SPEED;
+    if (key === 'z') {
+        if (currentCooldown > 0) { return; }
+        setCooldownCallback(TORNADO_COOLDOWN_DURATION);
+        let launchVx = 0; let launchVy = 0;
+        if (playerSprite.vx !== 0 || playerSprite.vy !== 0) {
+            const currentSpeed = Math.sqrt(playerSprite.vx * playerSprite.vx + playerSprite.vy * playerSprite.vy);
+            if (currentSpeed > 0) {
+                launchVx = (playerSprite.vx / currentSpeed) * TORNADO_PROJECTILE_SPEED;
+                launchVy = (playerSprite.vy / currentSpeed) * TORNADO_PROJECTILE_SPEED;
             }
         } else {
-            // If idle, launch in the last known direction
-            switch (Butterfly.lastDirection) {
+            switch (playerSprite.lastDirection) {
                 case 'up': launchVy = -TORNADO_PROJECTILE_SPEED; break;
                 case 'down': launchVy = TORNADO_PROJECTILE_SPEED; break;
                 case 'left': launchVx = -TORNADO_PROJECTILE_SPEED; break;
                 case 'right': launchVx = TORNADO_PROJECTILE_SPEED; break;
-                default: launchVx = TORNADO_PROJECTILE_SPEED; break; // Fallback
+                default: launchVx = TORNADO_PROJECTILE_SPEED; break;
             }
         }
-
-        // Create the tornado sprite at the butterfly's position
         const newTornado = new GameSprite(
             imageAssets[TORNADO_SPRITESHEET_KEY],
-            // Center tornado's collision box on butterfly's collision box
-            Butterfly.x + (Butterfly.collisionWidth * Butterfly.scale) / 2 - (TORNADO_COLLISION_WIDTH * Butterfly.scale) / 2,
-            Butterfly.y + (Butterfly.collisionHeight * Butterfly.scale) / 2 - (TORNADO_COLLISION_HEIGHT * Butterfly.scale) / 2,
-            TORNADO_FRAME_WIDTH,
-            TORNADO_FRAME_HEIGHT,
-            TORNADO_COLLISION_WIDTH,
-            TORNADO_COLLISION_HEIGHT,
-            TORNADO_ANIMATION_SPEED,
-            Butterfly.scale,
-            TORNADO_LIFETIME_FRAMES
+            playerSprite.x + (playerSprite.collisionWidth * playerSprite.scale) / 2 - (TORNADO_COLLISION_WIDTH * playerSprite.scale) / 2,
+            playerSprite.y + (playerSprite.collisionHeight * playerSprite.scale) / 2 - (TORNADO_COLLISION_HEIGHT * playerSprite.scale) / 2,
+            TORNADO_FRAME_WIDTH, TORNADO_FRAME_HEIGHT,
+            TORNADO_COLLISION_WIDTH, TORNADO_COLLISION_HEIGHT,
+            TORNADO_ANIMATION_SPEED, playerSprite.scale, TORNADO_LIFETIME_FRAMES, 'tornado'
         );
-        newTornado.vx = launchVx;
-        newTornado.vy = launchVy;
-        newTornado.caster = Butterfly; // Assign the Butterfly as the caster
-
-
-        // Define tornado animation (adjust as needed for your sheet)
-        newTornado.animations = {
-            'default': { framesPerRow: 3, start: 0, end: 6, speed: TORNADO_ANIMATION_SPEED, loop: true }
-        };
+        newTornado.vx = launchVx; newTornado.vy = launchVy; newTornado.caster = playerSprite;
+        newTornado.animations = { 'default': { framesPerRow: 3, start: 0, end: 6, speed: TORNADO_ANIMATION_SPEED, loop: true } };
         newTornado.setAnimation('default');
-
-        addSprite(newTornado);
+        import('./script.js').then(({ addSprite }) => { addSprite(newTornado); });
     }
 }
 
-// In Ben2.js, add this function below handleHitAttack and handleTornadoAttack
-// Handle Dash Attack (X key)
-export function handleDashAttack(key, currentCooldown, setCooldownCallback) {
+// Handle P2 Butterfly dash attack (X key)
+export function handlePlayer2ButterflyDashAttack(key, currentCooldown, setCooldownCallback) {
+    const playerSprite = Butterfly; // Directly reference the global P2 Butterfly instance
+    if (!playerSprite || key === null) return;
+
     if (key === 'x') {
-        if (currentCooldown > 0) {
-            // console.log("DEBUG: Dash attack on cooldown."); // Optional debug
-            return;
+        if (currentCooldown > 0) { return; }
+        setCooldownCallback(DASH_COOLDOWN_DURATION);
+        playerSprite.isDashing = true;
+        playerSprite.dashFramesRemaining = DASH_DURATION_FRAMES;
+        switch (playerSprite.lastDirection) {
+            case 'up': playerSprite.dashVx = 0; playerSprite.dashVy = -DASH_SPEED; break;
+            case 'down': playerSprite.dashVx = 0; playerSprite.dashVy = DASH_SPEED; break;
+            case 'left': playerSprite.dashVx = -DASH_SPEED; playerSprite.dashVy = 0; break;
+            case 'right': playerSprite.dashVx = DASH_SPEED; playerSprite.dashVy = 0; break;
+            default: playerSprite.dashVx = DASH_SPEED; playerSprite.dashVy = 0; break;
         }
-        setCooldownCallback(DASH_COOLDOWN_DURATION); // Start dash cooldown
-
-        Butterfly.isDashing = true; // Set a flag indicating the Butterfly is dashing
-        Butterfly.dashFramesRemaining = DASH_DURATION_FRAMES; // Set duration counter
-
-        // Determine dash velocity based on last direction
-        switch (Butterfly.lastDirection) {
-            case 'up':
-                Butterfly.dashVx = 0;
-                Butterfly.dashVy = -DASH_SPEED;
-                break;
-            case 'down':
-                Butterfly.dashVx = 0;
-                Butterfly.dashVy = DASH_SPEED;
-                break;
-            case 'left':
-                Butterfly.dashVx = -DASH_SPEED;
-                Butterfly.dashVy = 0;
-                break;
-            case 'right':
-                Butterfly.dashVx = DASH_SPEED;
-                Butterfly.dashVy = 0;
-                break;
-            default: // Fallback to dashing right if no direction known
-                Butterfly.dashVx = DASH_SPEED;
-                Butterfly.dashVy = 0;
-                break;
-        }
-        // console.log(`DEBUG: Initiating dash in ${Butterfly.lastDirection} with speed (${Butterfly.dashVx}, ${Butterfly.dashVy})`); // Optional debug
     }
 }
-
-// ===============================
-// 4. PLAYER MOVEMENT HANDLER
-// ===============================
-export function updatePlayerMovement(playerSprite, keys) {
-
-      if (playerSprite.isDashing) {
-        playerSprite.vx = playerSprite.dashVx; // Apply dash velocity
-        playerSprite.vy = playerSprite.dashVy;
-        playerSprite.dashFramesRemaining--;
-
-        if (playerSprite.dashFramesRemaining <= 0) {
-            playerSprite.isDashing = false; // Dash finished
-            playerSprite.vx = 0; // Stop dash movement
-            playerSprite.vy = 0;
-            // console.log("DEBUG: Dash finished."); // Optional debug
-            // Optionally, set a specific "dash_end" animation or revert to idle
-            // playerSprite.setAnimation('idle');
-        }
-        // During dash, prevent normal movement input from affecting vx/vy
-        // We've already set vx/vy to dash values, so just return or skip normal input processing.
-        // The rest of this function's animation/rotation logic still applies.
-    } else {
-    playerSprite.vx = 0;
-    playerSprite.vy = 0;
-
-    // Update lastDirection based on movement
-    if (keys.ArrowLeft) {
-        playerSprite.vx = -BUTTERFLY_MOVE_SPEED;
-        playerSprite.lastDirection = 'left';
-    } else if (keys.ArrowRight) {
-        playerSprite.vx = BUTTERFLY_MOVE_SPEED;
-        playerSprite.lastDirection = 'right';
-    }
-
-    // Prioritize horizontal for rotation, but track vertical for hit animation
-    if (keys.ArrowUp) {
-        playerSprite.vy = -BUTTERFLY_MOVE_SPEED;
-        if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'up';
-    } else if (keys.ArrowDown) {
-        playerSprite.vy = BUTTERFLY_MOVE_SPEED;
-        if (!keys.ArrowLeft && !keys.ArrowRight) playerSprite.lastDirection = 'down';
-    }
-
-    // DEBUG: Log the current state for movement/animation decisions
-    // console.log(`Butterfly Update: vx=${playerSprite.vx}, vy=${playerSprite.vy}, currentState=${playerSprite.currentAnimationState}`);
-
-
-      // --- Butterfly specific rotation update ---
-    // This logic should always apply, regardless of continuous movement keys being held
-    let desiredRotation = 0;
-    const tiltAngle = playerSprite.rotationSpeed;
-    if (playerSprite.vx > 0) { // Moving right
-        desiredRotation = tiltAngle;
-    } else if (playerSprite.vx < 0) { // Moving left
-        desiredRotation = -tiltAngle;
-    } else { // Not moving horizontally, gradually return to 0 rotation
-        desiredRotation = 0;
-    }
-    // Smoothly interpolate current rotation towards the desired rotation
-    playerSprite.currentRotation = playerSprite.currentRotation * (1 - playerSprite.rotationSmoothness) + desiredRotation * playerSprite.rotationSmoothness;
-
-
-
-    // If not moving, ensure idle animation is playing (unless an attack is active)
-    if (playerSprite.vx === 0 && playerSprite.vy === 0 && !playerSprite.currentAnimationState.startsWith('hit')) {
-        if (playerSprite.currentAnimationState !== 'idle') {
-            // console.log("DEBUG: Butterfly setting animation to 'idle' (not moving, not hitting).");
-            playerSprite.setAnimation('idle');
-        }
-    } else if (playerSprite.vx !== 0 || playerSprite.vy !== 0) {
-        // If moving, ensure idle animation is playing (unless an attack is active)
-        if (!playerSprite.currentAnimationState.startsWith('hit')) {
-            if (playerSprite.currentAnimationState !== 'idle') {
-                // console.log("DEBUG: Butterfly setting animation to 'idle' (moving, not hitting).");
-                playerSprite.setAnimation('idle');
-            }
-        }
-    }
-
-    // Check if a non-looping animation has finished and revert to idle
-    if (playerSprite.currentAnimationConfig && !playerSprite.currentAnimationConfig.loop &&
-        playerSprite.currentFrame >= playerSprite.currentAnimationConfig.end) { // Use >= for robustness
-        // --- NEW: If the finished animation was a 'hit' attack, reset the hitbox offset ---
-        if (playerSprite.currentAnimationState.startsWith('hit')) {
-            playerSprite.resetHitboxOffset();
-            // console.log("DEBUG: Hit animation finished, resetting hitbox offset.");
-            // --- NEW: Apply damage *after* the animation has completed its hit detection frame
-            // This is a simplified approach. In a real game, damage application might
-            // happen at a specific frame of the attack animation, not necessarily at the end.
-            // For now, if hit animation finishes and a collision was detected, apply damage.
-            // This is handled in the game loop now.
-        }
-        // Then set the next state (usually 'idle')
-        playerSprite.setAnimation(playerSprite.currentAnimationConfig.nextState || 'idle');
-    }
-}
-}
-
-// ===============================
-// 5. (OPTIONAL) UNUSED/REFERENCE SPRITES
-// ===============================
-/*
-const upHit = new GameSprite(
-    'Bens Sprites/UpButterfly.png',
-    200, 100,
-    16, 16,
-    7,
-    3,
-    5,
-    4.5
-);
-*/

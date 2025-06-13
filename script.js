@@ -6,10 +6,26 @@ export const TORNADO_PROJECTILE_SPEED = 4;
 export const TORNADO_LIFETIME_FRAMES = 150;
 export const TORNADO_COOLDOWN_DURATION = 150;
 export const HIT_COOLDOWN_DURATION = 60; // Cooldown for hit animation (e.g., 1 second)
-let tornadoCooldown = 0;
-let hitCooldown = 0; // Cooldown variable for hit animation
+let tornadoCooldownP1 = 0; // Separate cooldown for P1's tornado
+let hitCooldownP1 = 0;     // Separate cooldown for P1's hit
+let dashCooldownP1 = 0;    // Separate cooldown for P1's dash
+
+let tornadoCooldownP2 = 0; // Separate cooldown for P2's tornado
+let hitCooldownP2 = 0;     // Separate cooldown for P2's hit
+let dashCooldownP2 = 0;    // Separate cooldown for P2's dash
+
 export const TOASTER_MOVE_SPEED = 2;
-export let dashCooldown = 0; // <--- ADD THIS LINE
+
+// GLOBAL PLAYER SPRITE INSTANCES - These will hold the selected characters
+export let player1ActiveSprite = null; // Will point to either ButterflyP1 or ToasterP1
+export let player2ActiveSprite = null; // Will point to either ButterflyP2 or ToasterP2
+
+// Variables to track chosen character types and selection status
+let player1SelectedCharType = null; // Stores 'butterfly' or 'toaster'
+let player2SelectedCharType = null; // Stores 'butterfly' or 'toaster'
+let player1HasSelected = false;
+let player2HasSelected = false;
+
 
 // ===============================
 // 2. CANVAS SETUP
@@ -24,7 +40,7 @@ context.msImageSmoothingEnabled = false;
 // ===============================
 // 3. SPRITE MANAGEMENT
 // ===============================
-// Array to hold all your active sprites (ONLY ONE OF THESE)
+// Array to hold all your active sprites
 export const allGameSprites = [];
 export function addSprite(sprite) {
     allGameSprites.push(sprite);
@@ -44,16 +60,16 @@ export const keysPressed = {
     ArrowRight: false,
     ArrowUp: false,
     ArrowDown: false,
-    z: false, // For tornado input
-    c: false, // For hit input
-    x: false,  // For dash
-    w: false, // For Toaster movement (jump)
-    a: false, // For Toaster movement (left)
-    s: false, // For Toaster movement (down - currently unused)
-    d: false, // For Toaster movement (right)
-    i: false, // For Toaster special attack (charge shot)
-    o: false, // For Toaster block (currently unused)
-    p: false  // For Toaster basic attack (currently unused)
+    z: false, // Player 2 - typically attack/ability
+    c: false, // Player 2 - typically attack/ability
+    x: false, // Player 2 - typically attack/ability
+    w: false, // Player 1 - typically up/jump
+    a: false, // Player 1 - typically left
+    s: false, // Player 1 - typically down
+    d: false, // Player 1 - typically right
+    i: false, // Player 1 - typically attack/ability
+    o: false, // Player 1 - typically attack/ability
+    p: false  // Player 1 - typically attack/ability
 };
 
 // ===============================
@@ -61,14 +77,17 @@ export const keysPressed = {
 // ===============================
 export const imageAssets = {};
 const IMAGE_PATHS = {
-    Butterfly: 'Bens Sprites/Butterfly.png', // New combined 16x16 sheet
+    Butterfly: 'Bens Sprites/Butterfly.png', // Original Butterfly sprite sheet
+    ButterflyP1: 'Bens Sprites/Butterfly.png', // New colorway for P1 Butterfly
     tornado: 'Bens Sprites/Tornado.png',
-    IdleToaster: 'Aarons Sprites/Toaster.png',
+    IdleToaster: 'Aarons Sprites/Toaster.png', // Original Toaster sprite sheet (for NPC, or P2)
+    ToasterP1: 'Aarons Sprites/Toaster.png', // New colorway for P1 Toaster
+    ToasterP2: 'Aarons Sprites/Toaster.png', // New colorway for P2 Toaster (if you want a different one for P2)
     ground: 'Ground.png',
-    toastimg: 'Aarons Sprites/Bread.png', // Assumed to be the sprite sheet for toast projectiles
+    toastimg: 'Aarons Sprites/Bread.png', // Toast projectile image
     background: 'bg.png',
-    blockp1: 'Block P1.png',
-    blockp2: 'Block P2.png'
+    blockp1: 'Block P1.png', // P1 block image
+    blockp2: 'Block P2.png'  // P2 block image
 };
 
 // Loads all images and calls callback when done
@@ -100,18 +119,18 @@ function loadAllImages(callback) {
             loadedCount++;
             if (loadedCount === totalImages) {
                 console.warn("Image loading finished with errors. Proceeding anyway.");
-                callback();
+                callback(); // Call callback even if some failed, for robustness
             }
         };
     }
 }
-// Call loadAllImages in your startup sequence (e.g., when start button is clicked)
 
 // ===============================
 // 6. SPRITE CLASS DEFINITION
 // ===============================
 export class GameSprite {
-    constructor(image, x, y, frameWidth, frameHeight, collisionWidth, collisionHeight, animationSpeed, scale = 1, lifeTime = -1) {
+    // Added an optional 'tag' to differentiate sprite types
+    constructor(image, x, y, frameWidth, frameHeight, collisionWidth, collisionHeight, animationSpeed, scale = 1, lifeTime = -1, tag = 'generic') {
         // Sprite image and position
         this.image = image;
         this.x = x;
@@ -159,6 +178,27 @@ export class GameSprite {
 
         // Caster ID for projectiles
         this.caster = null; // Reference to the sprite that created this projectile
+        this.tag = tag; // New property to identify sprite type (e.g., 'player1-butterfly', 'player2-toaster', 'tornado', 'toast', 'block')
+
+        // Character-specific properties (will be set by their respective setup functions)
+        // Butterfly specific
+        this.hasDealtDamageThisAttack = false;
+        this.isDashing = false;
+        this.dashVx = 0;
+        this.dashVy = 0;
+        this.dashFramesRemaining = 0;
+        this.lastDirection = 'right'; // For last facing direction for attacks/movement
+
+        // Toaster specific
+        this.isChargingToast = false;
+        this.toastChargeStartTime = 0;
+        this.currentToastSprite = null; // To hold the toast sprite while charging
+        this.hasDealtDamageThisAttack2 = false; // For Toaster's hit attack
+        this.currentBlock = null; // To hold the block sprite while blocking
+        this.isBlocking = false; // Toaster's individual blocking state
+        this.jumpActive = false; // Toaster's individual jump state
+        this.toastCooldown = 0; // Toaster's individual toast cooldown
+        this.chargeLevel = 1; // Default charge level for toast projectiles (initialized to 1)
     }
 
     // Method to set hitbox offset
@@ -182,12 +222,12 @@ export class GameSprite {
         this.health -= amount;
         this.invincibilityFrames = this.invincibilityDuration; // Start invincibility
 
-        console.log(`${this.constructor.name} took ${amount} damage. Health: ${this.health}`);
+        console.log(`${this.constructor.name} (Tag: ${this.tag}) took ${amount} damage. Health: ${this.health}`);
 
         if (this.health <= 0) {
             this.health = 0;
             this.shouldRemove = true; // Mark for removal or handle death state
-            console.log(`${this.constructor.name} defeated!`);
+            console.log(`${this.constructor.name} (Tag: ${this.tag}) defeated!`);
         }
     }
 
@@ -195,7 +235,12 @@ export class GameSprite {
     setAnimation(state) {
         const config = this.animations[state];
         if (!config) {
-            console.warn(`Animation state '${state}' not found for sprite. Available: ${Object.keys(this.animations).join(', ')}`);
+            console.warn(`Animation state '${state}' not found for sprite (Tag: ${this.tag}). Available: ${Object.keys(this.animations).join(', ')}`);
+            // If no config, clear current animation so default behavior takes over
+            this.currentAnimationState = '';
+            this.currentAnimationConfig = null;
+            this.currentFrame = 0; // Reset to first frame for default cycle
+            this.frameCounter = 0;
             return;
         }
         // If already in this state and it's not a looping animation, don't restart it
@@ -206,7 +251,7 @@ export class GameSprite {
         this.currentAnimationConfig = config;
         this.currentFrame = config.start; // Reset to the start frame of the new animation
         this.frameCounter = 0; // Reset frame counter
-        this.framesPerRow = config.framesPerRow;
+        this.framesPerRow = config.framesPerRow; // Ensure this is set for draw
     }
 
     // Update animation, position, lifetime, and rotation
@@ -229,11 +274,17 @@ export class GameSprite {
                 }
             }
         } else {
-            // Fallback for sprites without explicit animation configs (less common)
-            this.frameCounter++;
-            if (this.frameCounter >= this.defaultAnimationSpeed) {
-                this.currentFrame = (this.currentFrame + 1) % this.totalFrames; // Assuming totalFrames is defined somewhere
-                this.frameCounter = 0;
+            // Default animation behavior: cycle through all frames based on defaultAnimationSpeed
+            // This is crucial for characters when no specific 'walk' animation is set or if animations are not defined.
+            if (this.image && this.image.width && this.image.height && this.frameWidth && this.frameHeight && this.defaultAnimationSpeed > 0) {
+                const totalFramesInSheet = (this.image.width / this.frameWidth) * (this.image.height / this.frameHeight);
+                this.frameCounter++;
+                if (this.frameCounter >= this.defaultAnimationSpeed) {
+                    this.frameCounter = 0;
+                    this.currentFrame = (this.currentFrame + 1) % totalFramesInSheet;
+                }
+            } else {
+                 this.currentFrame = 0; // Stick to first frame if image/dimensions are missing or invalid animation speed
             }
         }
 
@@ -277,11 +328,14 @@ export class GameSprite {
 
     // Draw the sprite on the canvas
     draw(context) {
-        if (!this.isLoaded || !this.currentAnimationConfig || !this.visible) return; // Don't draw if not loaded, no animation, or invisible
+        if (!this.isLoaded || !this.visible || !this.image) return; // Don't draw if not loaded, no animation, or invisible image
+
+        // Determine framesPerRow: use from currentAnimationConfig if available, otherwise calculate from image width
+        const actualFramesPerRow = (this.currentAnimationConfig && this.currentAnimationConfig.framesPerRow !== undefined) ? this.currentAnimationConfig.framesPerRow : (this.image.width / this.frameWidth);
 
         // Calculate source rectangle on the sprite sheet
-        const sx = (this.currentFrame % this.currentAnimationConfig.framesPerRow) * this.frameWidth;
-        const sy = Math.floor(this.currentFrame / this.currentAnimationConfig.framesPerRow) * this.frameHeight;
+        const sx = (this.currentFrame % actualFramesPerRow) * this.frameWidth;
+        const sy = Math.floor(this.currentFrame / actualFramesPerRow) * this.frameHeight;
 
         // Calculate destination size on canvas
         const drawWidth = this.frameWidth * this.scale;
@@ -342,7 +396,7 @@ export function checkCollision(spriteA, spriteB) {
     if (!spriteA.visible || !spriteB.visible) return false;
 
     // Get the collision boxes including any offsets
-  const box1 = spriteA.getCollisionBox();
+    const box1 = spriteA.getCollisionBox();
     const box2 = spriteB.getCollisionBox();
 
     // Check for overlap on x-axis (now includes touching at edges)
@@ -400,10 +454,48 @@ export function resolveCollision(spriteA, spriteB) {
 // ===============================
 // 8. MODULE IMPORTS
 // ===============================
-// Import player and toaster logic from other modules
-import { Butterfly, updatePlayerMovement, handleTornadoAttack, initializePlayerSprite, handleHitAttack, BUTTERFLY_HIT_DAMAGE, handleDashAttack } from './Ben2.js';
-// Only import necessary functions for Toaster movement and cooldown, not the internal helpers
-import { IdleToaster, initializeToasterSprite, updateToasterMovement, updateToastCooldown, chargeLevel, handleHitAttack2, ToasterHitDamage, blocking} from './Aaron.js';
+// Imports for Player 1 Butterfly logic
+import {
+    ButterflyP1,
+    initializePlayer1ButterflySprite,
+    updatePlayer1ButterflyMovement,
+    handlePlayer1ButterflyTornadoAttack,
+    handlePlayer1ButterflyHitAttack,
+    handlePlayer1ButterflyDashAttack,
+    BUTTERFLY_HIT_DAMAGE as BUTTERFLY_HIT_DAMAGE_P1 // Alias for clarity
+} from './Ben2.js';
+
+// Imports for Player 2 Butterfly logic (original Butterfly)
+import {
+    Butterfly, // Original Butterfly for P2
+    initializePlayer2ButterflySprite,
+    updatePlayer2ButterflyMovement,
+    handlePlayer2ButterflyTornadoAttack,
+    handlePlayer2ButterflyHitAttack,
+    handlePlayer2ButterflyDashAttack,
+    BUTTERFLY_HIT_DAMAGE // No alias needed here, just the original
+} from './Ben2.js';
+
+// Imports for Player 1 Toaster logic
+import {
+    ToasterP1,
+    initializePlayer1ToasterSprite,
+    updatePlayer1ToasterMovement,
+    handlePlayer1ToasterHitAttack,
+    TOASTER_HIT_DAMAGE as TOASTER_HIT_DAMAGE_P1,
+    updatePlayer1ToastCooldown // For Player 1 Toaster's specific toast cooldown
+} from './Aaron.js';
+
+// Imports for Player 2 Toaster logic (original IdleToaster)
+import {
+    IdleToaster, // Original IdleToaster (now used for P2 by default)
+    initializePlayer2ToasterSprite,
+    updatePlayer2ToasterMovement,
+    handlePlayer2ToasterHitAttack,
+    TOASTER_HIT_DAMAGE, // No alias needed here, just the original
+    updatePlayer2ToastCooldown // For Player 2 Toaster's specific toast cooldown
+} from './Aaron.js';
+
 
 // ===============================
 // 9. GAME LOOP
@@ -415,8 +507,8 @@ function gameLoop() {
     if (imageAssets.background && imageAssets.background.complete) {
         context.drawImage(
             imageAssets.background,
-            0, 0,                      // Destination x, y (top-left corner of canvas)
-            canvas.width, canvas.height // Destination width, height (fills canvas)
+            0, 0,
+            canvas.width, canvas.height
         );
     } else {
         context.fillStyle = '#000'; // Fallback background color if image not loaded
@@ -424,34 +516,92 @@ function gameLoop() {
     }
 
     // --- Draw Ground Tiles ---
-    const GROUND_TILE_WIDTH = 8;    // Your ground tile's width
-    const GROUND_TILE_HEIGHT = 32;  // Your ground tile's height
-    const GROUND_START_Y = canvas.height - GROUND_TILE_HEIGHT; // Y position for the bottom of the canvas
+    const GROUND_TILE_WIDTH = 8;
+    const GROUND_TILE_HEIGHT = 32;
+    const GROUND_START_Y = canvas.height - GROUND_TILE_HEIGHT;
 
-    if (imageAssets.ground && imageAssets.ground.complete) { // Ensure ground image is loaded
-        const numTilesX = Math.ceil(canvas.width / GROUND_TILE_WIDTH); // Calculate number of tiles needed across the width
+    if (imageAssets.ground && imageAssets.ground.complete) {
+        const numTilesX = Math.ceil(canvas.width / GROUND_TILE_WIDTH);
         for (let i = 0; i < numTilesX; i++) {
             context.drawImage(
                 imageAssets.ground,
-                i * GROUND_TILE_WIDTH, // X position for this tile
-                GROUND_START_Y,        // Y position: fixed at the bottom
+                i * GROUND_TILE_WIDTH,
+                GROUND_START_Y,
                 GROUND_TILE_WIDTH,
                 GROUND_TILE_HEIGHT
             );
         }
     }
 
-    // Update player and toaster movement based on keyboard input
-    updatePlayerMovement(Butterfly, keysPressed);
-    updateToasterMovement(IdleToaster, keysPressed);
-    
+    // --- Update Cooldowns ---
+    // Update P1 cooldowns
+    if (tornadoCooldownP1 > 0) tornadoCooldownP1--;
+    if (hitCooldownP1 > 0) hitCooldownP1--;
+    if (dashCooldownP1 > 0) dashCooldownP1--;
+    // Update P2 cooldowns
+    if (tornadoCooldownP2 > 0) tornadoCooldownP2--;
+    if (hitCooldownP2 > 0) hitCooldownP2--;
+    if (dashCooldownP2 > 0) dashCooldownP2--;
 
-    // Decrement attack cooldowns
-    if (tornadoCooldown > 0) tornadoCooldown--;
-    if (hitCooldown > 0) hitCooldown--;
-      if (dashCooldown > 0) dashCooldown--; 
-      
-    updateToastCooldown(); // Decrement toast cooldown
+    // Update Toaster-specific cooldowns (handled internally by Toaster update functions as sprite properties)
+    // However, the `updatePlayerXToastCooldown` functions exist in Aaron.js, so let's call them if the player is a toaster
+    if (player1SelectedCharType === 'toaster') {
+        updatePlayer1ToastCooldown();
+    }
+    if (player2SelectedCharType === 'toaster') {
+        updatePlayer2ToastCooldown();
+    }
+
+
+    // --- Update Player Movement and Attacks ---
+    // Player 1 (WASD keys, I, O, P)
+    if (player1ActiveSprite) {
+        const p1MovementKeys = {
+            ArrowLeft: keysPressed.a,
+            ArrowRight: keysPressed.d,
+            ArrowUp: keysPressed.w,
+            ArrowDown: keysPressed.s,
+            attack1: keysPressed.i, // For Toaster (charge) or Butterfly (tornado)
+            attack2: keysPressed.p, // For Toaster (basic hit) or Butterfly (hit)
+            ability: keysPressed.o  // For Toaster (block) or Butterfly (dash)
+        };
+
+        if (player1SelectedCharType === 'butterfly') {
+            updatePlayer1ButterflyMovement(p1MovementKeys);
+            // Pass the key string ONLY if the key is pressed, otherwise null
+            handlePlayer1ButterflyTornadoAttack(p1MovementKeys.attack1 ? 'i' : null, tornadoCooldownP1, (duration) => tornadoCooldownP1 = duration);
+            handlePlayer1ButterflyHitAttack(p1MovementKeys.attack2 ? 'p' : null, hitCooldownP1, (duration) => hitCooldownP1 = duration);
+            handlePlayer1ButterflyDashAttack(p1MovementKeys.ability ? 'o' : null, dashCooldownP1, (duration) => dashCooldownP1 = duration);
+        } else if (player1SelectedCharType === 'toaster') {
+            updatePlayer1ToasterMovement(p1MovementKeys);
+            handlePlayer1ToasterHitAttack(p1MovementKeys.attack2 ? 'p' : null, hitCooldownP1, (duration) => hitCooldownP1 = duration);
+        }
+    }
+
+    // Player 2 (Arrow keys, Z, C, X)
+    if (player2ActiveSprite) {
+        const p2MovementKeys = {
+            ArrowLeft: keysPressed.ArrowLeft,
+            ArrowRight: keysPressed.ArrowRight,
+            ArrowUp: keysPressed.ArrowUp,
+            ArrowDown: keysPressed.ArrowDown,
+            attack1: keysPressed.z, // For Toaster (charge) or Butterfly (tornado)
+            attack2: keysPressed.c, // For Toaster (basic hit) or Butterfly (hit)
+            ability: keysPressed.x  // For Toaster (block) or Butterfly (dash)
+        };
+
+        if (player2SelectedCharType === 'butterfly') {
+            updatePlayer2ButterflyMovement(p2MovementKeys);
+            // Pass the key string ONLY if the key is pressed, otherwise null
+            handlePlayer2ButterflyTornadoAttack(p2MovementKeys.attack1 ? 'z' : null, tornadoCooldownP2, (duration) => tornadoCooldownP2 = duration);
+            handlePlayer2ButterflyHitAttack(p2MovementKeys.attack2 ? 'c' : null, hitCooldownP2, (duration) => hitCooldownP2 = duration);
+            handlePlayer2ButterflyDashAttack(p2MovementKeys.ability ? 'x' : null, dashCooldownP2, (duration) => dashCooldownP2 = duration);
+        } else if (player2SelectedCharType === 'toaster') {
+            updatePlayer2ToasterMovement(p2MovementKeys);
+            handlePlayer2ToasterHitAttack(p2MovementKeys.attack2 ? 'c' : null, hitCooldownP2, (duration) => hitCooldownP2 = duration);
+        }
+    }
+
 
     // Update, draw, and filter sprites (remove those marked for removal)
     const spritesToKeep = [];
@@ -465,107 +615,148 @@ function gameLoop() {
     }
     // Efficiently update the allGameSprites array with only the sprites to keep
     allGameSprites.length = 0; // Clear the original array
-    allGameSprites.push(...spritesToKeep); // Add back only the sprites that should remain
+    allGameSprites.push(...spritesToKeep);
 
-     
-    if (keysPressed['x']) { // <--- ADD THIS FOR DASH ATTACK
-        handleDashAttack('x', dashCooldown, (duration) => dashCooldown = duration);
-    }
 
-    // --- Handle Character-to-Character Collision (Butterfly vs Toaster) ---
-    if (Butterfly && IdleToaster) {
-        if (checkCollision(Butterfly, IdleToaster)) {
-            // Resolve collision to prevent characters from overlapping
-            resolveCollision(Butterfly, IdleToaster);
-            resolveCollision(IdleToaster, Butterfly); // Resolve from both sides for robust separation
-        }
-    }
+    // --- Handle Character-to-Character Collisions ---
+    const allPlayableCharacters = [player1ActiveSprite, player2ActiveSprite].filter(Boolean); // Filter out null/undefined
 
-    // --- Handle Butterfly Hit Attack Collision (Butterfly's hitbox vs Toaster) ---
-    if (Butterfly && IdleToaster &&
-        Butterfly.currentAnimationState.startsWith('hit') && // Check if Butterfly is in a 'hit' animation
-        (Butterfly.hitboxOffsetX !== 0 || Butterfly.hitboxOffsetY !== 0) &&  (!Butterfly.hasDealtDamageThisAttack) && // Check if Butterfly's hitbox is extended
-        checkCollision(Butterfly, IdleToaster)) { // Check for collision with Toaster
-        // Apply damage to the Toaster
-        if (IdleToaster.takeDamage) { // Ensure Toaster has the takeDamage method
-            Butterfly.hasDealtDamageThisAttack = true;
-            if (blocking !== true) {
-                IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE);   
-            }
-            if (blocking == true) {
-                IdleToaster.takeDamage(BUTTERFLY_HIT_DAMAGE)*0.75;   
-            }
- // Use the damage constant from Ben2.js
-        }
-    }
-    if (Butterfly && IdleToaster &&
-        IdleToaster.currentAnimationState.startsWith('hit') && // Check if Butterfly is in a 'hit' animation
-        (IdleToaster.hitboxOffsetX !== 0 || IdleToaster.hitboxOffsetY !== 0) &&  (!IdleToaster.hasDealtDamageThisAttack2) && // Check if Butterfly's hitbox is extended
-        checkCollision(Butterfly, IdleToaster)) { // Check for collision with Toaster
-        // Apply damage to the Toaster
-        if (Butterfly.takeDamage) { // Ensure Toaster has the takeDamage method
-            IdleToaster.hasDealtDamageThisAttack2 = true;
-            Butterfly.takeDamage(ToasterHitDamage); // Use the damage constant from Ben2.js
-        }
-    }
-    // --- Handle Projectile Collisions (Tornado vs Characters, Toast vs Characters) ---
-    if (Butterfly && IdleToaster) {
-        for (let i = 0; i < allGameSprites.length; i++) {
-            const projectile = allGameSprites[i];
+    for (let i = 0; i < allPlayableCharacters.length; i++) {
+        for (let j = i + 1; j < allPlayableCharacters.length; j++) {
+            const charA = allPlayableCharacters[i];
+            const charB = allPlayableCharacters[j];
+            if (checkCollision(charA, charB)) {
+                // FIXED: One-way collision logic: Toaster pushes Butterfly, but not vice-versa
+                const isA_Butterfly = charA.tag.includes('butterfly');
+                const isA_Toaster = charA.tag.includes('toaster');
+                const isB_Butterfly = charB.tag.includes('butterfly');
+                const isB_Toaster = charB.tag.includes('toaster');
 
-            // Skip if the sprite is marked for removal or doesn't have an image (e.g., if it's a generic invisible hitbox)
-            if (projectile.shouldRemove || !projectile.image) continue;
-
-            // Check if the sprite is a tornado projectile
-            if (projectile.image === imageAssets.tornado) {
-                // Tornado vs Butterfly (don't collide with the caster)
-                if (projectile.caster !== Butterfly && checkCollision(projectile, Butterfly)) {
-                    console.log("Tornado collided with Butterfly!");
-                    Butterfly.takeDamage(5); // Example damage from tornado
-                    resolveCollision(Butterfly, projectile); // Push Butterfly away
-                    // DO NOT SET shouldRemove = true here for Tornado
+                if (isA_Butterfly && isB_Toaster) {
+                    resolveCollision(charA, charB); // Push Butterfly (A) out of Toaster (B)
+                    // Do NOT resolveCollision(charB, charA);
+                } else if (isA_Toaster && isB_Butterfly) {
+                    resolveCollision(charB, charA); // Push Butterfly (B) out of Toaster (A)
+                    // Do NOT resolveCollision(charA, charB);
+                } else {
+                    // For other collisions (e.g., Butterfly-Butterfly, Toaster-Toaster),
+                    // or if the collision is not specifically Butterfly-Toaster,
+                    // apply symmetric resolution.
+                    resolveCollision(charA, charB);
+                    resolveCollision(charB, charA);
                 }
-                // Tornado vs Toaster (don't collide with the caster)
-                if (projectile.caster !== IdleToaster && checkCollision(projectile, IdleToaster)) {
-                    console.log("Tornado collided with Toaster!");
-                    if (IdleToaster.takeDamage) {
-                        if(blocking == false){
-                            IdleToaster.takeDamage(5);
-                        }
-                        else{
+            }
+        }
+    }
 
-                        }
- // Example damage from tornado
+
+    // --- Handle Hit Attack Damage ---
+    // Iterate through all characters to check if they are performing a hit attack and colliding with a target
+    allPlayableCharacters.forEach(attacker => {
+        if (!attacker) return; // Skip if attacker doesn't exist
+
+        const targets = allPlayableCharacters.filter(target => target !== attacker); // All other characters are potential targets
+
+        targets.forEach(target => {
+            // Check for Butterfly's hit attack
+            if (attacker.tag.includes('butterfly') &&
+                attacker.currentAnimationState.startsWith('hit') &&
+                (attacker.hitboxOffsetX !== 0 || attacker.hitboxOffsetY !== 0) &&
+                (!attacker.hasDealtDamageThisAttack) &&
+                checkCollision(attacker, target)) {
+                if (target.takeDamage) {
+                    attacker.hasDealtDamageThisAttack = true; // Mark damage dealt for this attack
+                    let damage = attacker.tag.includes('player1') ? BUTTERFLY_HIT_DAMAGE_P1 : BUTTERFLY_HIT_DAMAGE;
+                    // Apply blocking reduction if target is a Toaster and is blocking
+                    if (target.tag.includes('toaster') && target.isBlocking) {
+                        damage *= 0.75;
                     }
-                    resolveCollision(IdleToaster, projectile); // Push Toaster away
-                    // DO NOT SET shouldRemove = true here for Tornado
+                    target.takeDamage(damage);
                 }
             }
-            
-            // Check if the sprite is a toast projectile
-            if (projectile.image === imageAssets.toastimg) {
-                // Toast vs Butterfly: Check if the toast was cast by the Toaster AND it collides with Butterfly
-                // AND the toast itself hasn't already been marked for removal (important for single hit)
-                if (projectile.caster === IdleToaster && checkCollision(projectile, Butterfly) && !projectile.shouldRemove) {
+            // Check for Toaster's hit attack
+            if (attacker.tag.includes('toaster') &&
+                attacker.currentAnimationState.startsWith('hit') &&
+                (attacker.hitboxOffsetX !== 0 || attacker.hitboxOffsetY !== 0) &&
+                (!attacker.hasDealtDamageThisAttack2) &&
+                checkCollision(attacker, target)) {
+                if (target.takeDamage) {
+                    attacker.hasDealtDamageThisAttack2 = true; // Mark damage dealt for this attack
+                    let damage = attacker.tag.includes('player1') ? TOASTER_HIT_DAMAGE_P1 : TOASTER_HIT_DAMAGE;
+                    // Apply blocking reduction if target is a Toaster and is blocking
+                    if (target.tag.includes('toaster') && target.isBlocking) {
+                        damage *= 0.75;
+                    }
+                    target.takeDamage(damage);
+                }
+            }
+        });
+    });
+
+
+    // --- Handle Projectile Collisions (Tornado/Toast vs Characters) ---
+    // We need to iterate over all sprites, not just playable characters, to find projectiles
+    for (let i = 0; i < allGameSprites.length; i++) {
+        const projectile = allGameSprites[i];
+        if (projectile.shouldRemove || !projectile.image) continue;
+
+        // Check for Tornado projectiles
+        if (projectile.tag === 'tornado') {
+            // Targets are all characters except the caster of *this specific projectile*
+            const targets = allPlayableCharacters.filter(target => target !== projectile.caster);
+            targets.forEach(target => {
+                if (checkCollision(projectile, target)) {
+                    console.log(`Tornado from ${projectile.caster.tag} collided with ${target.tag}!`);
+                    let damage = 5; // Fixed damage for tornado
+                    if (target.tag.includes('toaster') && target.isBlocking) {
+                        damage *= 0.75;
+                    }
+                    target.takeDamage(damage);
+
+                    // FIXED: Apply push effect to the target
+                    // Impart the tornado's velocity to the target for a brief push
+                    const PUSH_FORCE_MULTIPLIER = 1.5; // Adjust push strength
+                    target.vx += projectile.vx * PUSH_FORCE_MULTIPLIER;
+                    target.vy += projectile.vy * PUSH_FORCE_MULTIPLIER;
+
+                    // Ensure the target is also pushed out of the tornado's collision box
+                    resolveCollision(target, projectile);
+                }
+            });
+        }
+
+        // Check for Toast projectiles
+        if (projectile.tag === 'toast') {
+            // Targets are all characters except the caster of *this specific projectile*
+            const targets = allPlayableCharacters.filter(target => target !== projectile.caster);
+            targets.forEach(target => {
+                if (checkCollision(projectile, target) && !projectile.shouldRemove) {
+                    console.log(`Toast from ${projectile.caster.tag} collided with ${target.tag}!`);
                     let damage = 5;
+                    // projectile.chargeLevel is now guaranteed to exist due to initialization in createChargingToast
                     if (projectile.chargeLevel === 2) damage = 10;
                     if (projectile.chargeLevel === 3) damage = 15;
-                    
-                    Butterfly.takeDamage(damage);
-                    projectile.shouldRemove = true; // Toast disappears on hit
-                    console.log("Toast from Toaster collided with Butterfly! Damage:", damage, "Charge Level:", projectile.chargeLevel);
+                    if (target.tag.includes('toaster') && target.isBlocking) {
+                        damage *= 0.75;
+                    }
+                    target.takeDamage(damage);
+                    removeSprite(projectile); // Toast disappears on hit
                 }
-            }
+            });
         }
     }
-    // --- Draw Health Bar for Butterfly ---
-    if (Butterfly) {
-        drawHealthBar(context, Butterfly);
+
+    // --- Draw Health Bars ---
+    if (player1ActiveSprite) {
+        drawHealthBar(context, player1ActiveSprite);
     }
-    // Draw Health Bar for IdleToaster
-    if (IdleToaster) {
-        drawHealthBar(context, IdleToaster);
+    if (player2ActiveSprite) {
+        drawHealthBar(context, player2ActiveSprite);
     }
+    // No dedicated NPC toaster in this setup unless you explicitly create one
+    // if (IdleToaster) { // If you later add a specific NPC toaster
+    //     drawHealthBar(context, IdleToaster);
+    // }
 
     requestAnimationFrame(gameLoop); // Request next frame for continuous animation
 }
@@ -597,42 +788,55 @@ function drawHealthBar(ctx, sprite) {
 // ===============================
 // 10. SPRITE LOADING & GAME START
 // ===============================
+// Function to initialize the actual GameSprite instances for player characters and NPCs
+function initializeGameCharacters() {
+    // Clear all existing sprites from previous game runs (if any)
+    allGameSprites.length = 0;
+
+    // --- Player 1 Character Initialization ---
+    let p1StartX = 50;
+    let p1StartY; // Will be set based on character type
+
+    if (player1SelectedCharType === 'butterfly') {
+        p1StartY = 100; // Butterfly initial Y
+        initializePlayer1ButterflySprite(p1StartX, p1StartY); // Call setup for P1 Butterfly
+        player1ActiveSprite = ButterflyP1; // Set active sprite to the P1 Butterfly instance
+    } else if (player1SelectedCharType === 'toaster') {
+        p1StartY = 235; // Toaster initial Y (closer to ground)
+        initializePlayer1ToasterSprite(p1StartX, p1StartY); // Call setup for P1 Toaster
+        player1ActiveSprite = ToasterP1; // Set active sprite to the P1 Toaster instance
+    }
+    console.log(`Player 1 initialized as ${player1SelectedCharType}.`);
+
+
+    // --- Player 2 Character Initialization ---
+    let p2StartX = 250;
+    let p2StartY; // Will be set based on character type
+
+    if (player2SelectedCharType === 'butterfly') {
+        p2StartY = 100; // Butterfly initial Y
+        initializePlayer2ButterflySprite(p2StartX, p2StartY); // Call setup for P2 Butterfly (original Butterfly logic)
+        player2ActiveSprite = Butterfly; // Set active sprite to the P2 Butterfly instance
+    } else if (player2SelectedCharType === 'toaster') {
+        p2StartY = 235; // Toaster initial Y
+        initializePlayer2ToasterSprite(p2StartX, p2StartY); // Call setup for P2 Toaster (original IdleToaster logic)
+        player2ActiveSprite = IdleToaster; // Set active sprite to the P2 Toaster instance
+    }
+    console.log(`Player 2 initialized as ${player2SelectedCharType}.`);
+
+    // In this "duplicate instance" setup, the original IdleToaster and Butterfly
+    // are now potentially used as Player 2. If you want a separate NPC
+    // that is always present, you'd initialize a *third* Toaster here,
+    // explicitly as an NPC, with its own specific tag and initial position.
+    // For now, no additional NPC is implicitly created here.
+
+    console.log("All characters are set up. Starting game loop.");
+    gameLoop(); // Start the game loop only once characters are ready
+}
+
 function startGameAfterAssetsLoaded() {
-    let allLoaded = true;
-    for (let i = 0; i < allGameSprites.length; i++) {
-        if (!allGameSprites[i].isLoaded) {
-            allLoaded = false;
-            break;
-        }
-    }
-
-    if (allLoaded) {
-        console.log("All images loaded! Starting game loop.");
-
-        // Debug: Inspect loaded image assets
-        console.log("--- Image Assets Inspection (Pre-Sprite Init) ---");
-        for (const key in imageAssets) {
-            const img = imageAssets[key];
-            if (img instanceof HTMLImageElement) {
-                console.log(`Key: '${key}', Image:`, img, ` (src: ${img.src}, complete: ${img.complete}, naturalWidth: ${img.naturalWidth}, naturalHeight: ${img.naturalHeight})`);
-            } else {
-                console.log(`Key: '${key}', Image:`, img, ` (NOT an HTMLImageElement, type: ${typeof img})`);
-            }
-        }
-        console.log("-----------------------------------------------");
-
-        // Ensure initialization happens only once
-        if (!Butterfly) {
-            initializePlayerSprite();
-        }
-        if (!IdleToaster) {
-            initializeToasterSprite();
-        }
-        gameLoop();
-    } else {
-        // Changed to call itself to re-check asset loading status
-        setTimeout(startGameAfterAssetsLoaded, 100);
-    }
+    // This function ensures assets are ready before character selection proceeds.
+    console.log("Assets loaded. Ready for character selection.");
 }
 
 // ===============================
@@ -645,18 +849,6 @@ document.addEventListener('keydown', (event) => {
         keysPressed[event.key] = true;
         event.preventDefault(); // Prevent default browser actions for game keys
     }
-    // Only handle attacks if the player sprite exists
-    if (Butterfly) {
-        // These functions now internally check for cooldowns and key states
-        handleTornadoAttack(event.key, tornadoCooldown, (newCooldown) => { tornadoCooldown = newCooldown; });
-        handleHitAttack(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; });
-    }
-    if (IdleToaster) {
-        // These functions now internally check for cooldowns and key states
-        handleHitAttack2(event.key, hitCooldown, (newCooldown) => { hitCooldown = newCooldown; });
-    }
-    // The toaster's special attack (toast charge) is handled in updateToasterMovement
-    // when 'i' is pressed or released, so no direct call here.
 });
 
 document.addEventListener('keyup', (event) => {
@@ -669,16 +861,57 @@ document.addEventListener('keyup', (event) => {
 document.getElementById('startButton').addEventListener('click', () => {
     document.getElementById('charSelect').style.display = 'flex';
     document.getElementById('mainMenu').style.display = 'none';
+    // Load assets here, so they are ready when the char select screen is shown
+    // and before the final game start
+    if (!window.gameAssetsLoaded) {
+        console.log("Main start button clicked. Loading assets...");
+        loadAllImages(() => {
+            window.gameAssetsLoaded = true;
+            startGameAfterAssetsLoaded();
+        });
+    } else {
+        console.log("Assets already loaded. Proceeding to character select.");
+        startGameAfterAssetsLoaded();
+    }
 });
 
+// Character Selection Logic for Player 1
+document.getElementById('char1p1').addEventListener('click', () => {
+    player1SelectedCharType = 'butterfly';
+    player1HasSelected = true;
+    console.log("Player 1 selected Butterfly.");
+    // Optionally update UI to show selection (e.g., add a border or text)
+});
+document.getElementById('char2p1').addEventListener('click', () => {
+    player1SelectedCharType = 'toaster';
+    player1HasSelected = true;
+    console.log("Player 1 selected Toaster.");
+    // Optionally update UI to show selection
+});
+
+// Character Selection Logic for Player 2
+document.getElementById('char1p2').addEventListener('click', () => {
+    player2SelectedCharType = 'butterfly';
+    player2HasSelected = true;
+    console.log("Player 2 selected Butterfly.");
+    // Optionally update UI to show selection
+});
+document.getElementById('char2p2').addEventListener('click', () => {
+    player2SelectedCharType = 'toaster';
+    player2HasSelected = true;
+    console.log("Player 2 selected Toaster.");
+    // Optionally update UI to show selection
+});
+
+
 document.getElementById('buttonStart').addEventListener('click', () => {
-    document.getElementById('charSelect').style.display = 'none';
-    document.getElementById('gameCanvas').style.display = 'flex';
-    if (!window.gameStartedAndLoaded) {
-        console.log("Game start button clicked. Loading assets...");
-        loadAllImages(startGameAfterAssetsLoaded);
-        window.gameStartedAndLoaded = true;
-    } else {
-        console.log("Game already started/assets already loaded.");
+    if (!player1HasSelected || !player2HasSelected) {
+        console.error("Please select a character for both players to confirm you are ready!");
+        return;
     }
+
+    document.getElementById('charSelect').style.display = 'none';
+    document.getElementById('gameCanvas').style.display = 'block';
+
+    initializeGameCharacters(); // Initialize the player sprites and start the game loop
 });
