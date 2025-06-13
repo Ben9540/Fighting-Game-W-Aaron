@@ -192,7 +192,7 @@ export function initializePlayer2ToasterSprite(initialX, initialY) {
     IdleToaster.currentBlock = null;
     IdleToaster.isBlocking = false;
     IdleToaster.jumpActive = false;
-    IdleToaster.toastCooldown = 2; // Individual cooldown for this toaster instance
+    IdleToaster.toastCooldown = 0; // Individual cooldown for this toaster instance
 
     IdleToaster.animations = {
         'idle': { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 0, end: 0, speed: IDLE_ANIMATION_SPEED, loop: true },
