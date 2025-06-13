@@ -98,10 +98,10 @@
       border: black, solid, 5px;
       position: relative;
       margin: 20px;
-      background-image: url('Aarons\ Sprites/Toaster.png');
-      background-position: 0px 0px;
+      background-image: url('Bens\ Sprites/Butterfly.png');
+      background-position: -75px -75px;
       image-rendering: pixelated;
-      background-size: 640px;
+      background-size: 1800px;
   }
 
   #char2p1 {
@@ -111,10 +111,10 @@
       border: black, solid, 5px;
       position: relative;
       margin: 20px;
-      background-image: url('Bens\ Sprites/IdleButterfly.png');
+      background-image: url('Aarons\ Sprites/Toaster.png');
       background-position: 0px 0px;
       image-rendering: pixelated;
-      background-size: 300px;
+      background-size: 640px;
   }
 
   #charrowp1 {
@@ -145,10 +145,10 @@
     border: black, solid, 5px;
     position: relative;
     margin: 20px;
-    background-image: url('Aarons\ Sprites/Toaster.png');
-    background-position: 0px 0px;
+    background-image: url('Bens\ Sprites/Butterfly2.png');
+    background-position: -75px -75px;
     image-rendering: pixelated;
-    background-size: 640px;
+    background-size: 1800px;
 }
 
 #char2p2 {
@@ -158,10 +158,10 @@
     border: black, solid, 5px;
     position: relative;
     margin: 20px;
-    background-image: url('Bens\ Sprites/IdleButterfly.png');
+    background-image: url('Aarons\ Sprites/ToasterRecolour.png');
     background-position: 0px 0px;
     image-rendering: pixelated;
-    background-size: 300px;
+    background-size: 640px;
 }
 
 #charrowp2 {

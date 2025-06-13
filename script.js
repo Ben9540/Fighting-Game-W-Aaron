@@ -77,12 +77,12 @@ export const keysPressed = {
 // ===============================
 export const imageAssets = {};
 const IMAGE_PATHS = {
-    Butterfly: 'Bens Sprites/Butterfly.png', // Original Butterfly sprite sheet
-    ButterflyP1: 'Bens Sprites/Butterfly2.png', // New colorway for P1 Butterfly
+    Butterfly: 'Bens Sprites/Butterfly2.png', // Original Butterfly sprite sheet
+    ButterflyP1: 'Bens Sprites/Butterfly.png', // New colorway for P1 Butterfly
     tornado: 'Bens Sprites/Tornado.png',
-    IdleToaster: 'Aarons Sprites/Toaster.png', // Original Toaster sprite sheet (for NPC, or P2)
+    IdleToaster: 'Aarons Sprites/ToasterRecolour.png', // Original Toaster sprite sheet (for NPC, or P2)
     ToasterP1: 'Aarons Sprites/Toaster.png', // New colorway for P1 Toaster
-    ToasterP2: 'Aarons Sprites/Toaster.png', // New colorway for P2 Toaster (if you want a different one for P2)
+    ToasterP2: 'Aarons Sprites/ToasterRecolour.png', // New colorway for P2 Toaster (if you want a different one for P2)
     ground: 'Ground.png',
     toastimg: 'Aarons Sprites/Bread.png', // Toast projectile image
     background: 'bg.png',
@@ -877,12 +877,20 @@ document.getElementById('startButton').addEventListener('click', () => {
 
 // Character Selection Logic for Player 1
 document.getElementById('char1p1').addEventListener('click', () => {
+    if(player1HasSelected == false || player1SelectedCharType == 'toaster'){
+        document.getElementById('char1p1').style.backgroundColor = "blue"
+        document.getElementById('char2p1').style.backgroundColor = "#88E688"
+    }
     player1SelectedCharType = 'butterfly';
     player1HasSelected = true;
     console.log("Player 1 selected Butterfly.");
     // Optionally update UI to show selection (e.g., add a border or text)
 });
 document.getElementById('char2p1').addEventListener('click', () => {
+    if(player1HasSelected == false || player1SelectedCharType == 'butterfly'){
+        document.getElementById('char2p1').style.backgroundColor = "blue"
+        document.getElementById('char1p1').style.backgroundColor = "#88E688"
+    }
     player1SelectedCharType = 'toaster';
     player1HasSelected = true;
     console.log("Player 1 selected Toaster.");
@@ -891,12 +899,20 @@ document.getElementById('char2p1').addEventListener('click', () => {
 
 // Character Selection Logic for Player 2
 document.getElementById('char1p2').addEventListener('click', () => {
+    if(player2HasSelected == false || player2SelectedCharType == 'toaster'){
+        document.getElementById('char1p2').style.backgroundColor = "blue"
+        document.getElementById('char2p2').style.backgroundColor = "#88E688"
+    }
     player2SelectedCharType = 'butterfly';
     player2HasSelected = true;
     console.log("Player 2 selected Butterfly.");
     // Optionally update UI to show selection
 });
 document.getElementById('char2p2').addEventListener('click', () => {
+    if(player2HasSelected == false || player2SelectedCharType == 'butterfly'){
+        document.getElementById('char2p2').style.backgroundColor = "blue"
+        document.getElementById('char1p2').style.backgroundColor = "#88E688"
+    }
     player2SelectedCharType = 'toaster';
     player2HasSelected = true;
     console.log("Player 2 selected Toaster.");

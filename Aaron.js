@@ -192,7 +192,7 @@ export function initializePlayer2ToasterSprite(initialX, initialY) {
     IdleToaster.currentBlock = null;
     IdleToaster.isBlocking = false;
     IdleToaster.jumpActive = false;
-    IdleToaster.toastCooldown = 0; // Individual cooldown for this toaster instance
+    IdleToaster.toastCooldown = 2; // Individual cooldown for this toaster instance
 
     IdleToaster.animations = {
         'idle': { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 0, end: 0, speed: IDLE_ANIMATION_SPEED, loop: true },
@@ -388,8 +388,8 @@ function createChargingToast(toasterSprite) {
 export function shootToast(toastSprite, chargeLevel, caster) {
     if (!toastSprite) return;
 
-    const TOAST_SPEED_BASE = 3;
-    const TOAST_SPEED_MULTIPLIER = 1.5; // Each charge level increases speed by this factor
+    const TOAST_SPEED_BASE = 6;
+    const TOAST_SPEED_MULTIPLIER = 1; // Each charge level increases speed by this factor
 
     toastSprite.chargeLevel = chargeLevel; // Set the actual charge level for damage calculation later
     toastSprite.caster = caster; // Assign the caster
