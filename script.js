@@ -517,9 +517,9 @@ function gameLoop() {
             const targets = allPlayableCharacters.filter(target => target !== projectile.caster);
             targets.forEach(target => {
                 if (checkCollision(projectile, target) && !projectile.shouldRemove) {
-                    let damage = 5;
-                    if (projectile.chargeLevel === 2) damage = 10;
-                    if (projectile.chargeLevel === 3) damage = 15;
+                    let damage = 10;
+                    if (projectile.chargeLevel === 2) damage = 20;
+                    if (projectile.chargeLevel === 3) damage = 30;
                     if (target.tag.includes('toaster') && target.isBlocking) damage *= 0.75;
                     target.takeDamage(damage);
                     removeSprite(projectile);

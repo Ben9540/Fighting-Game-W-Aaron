@@ -111,6 +111,7 @@ export function updatePlayer1ToasterMovement(keys) {
             console.log(`P1 Toaster released toast, charge: ${chargeDuration}, level: ${currentChargeLevel}`);
         }
         if (toasterSprite.isChargingToast && toasterSprite.currentToastSprite) {
+            toasterSprite.toastCooldown = 60;
             toasterSprite.currentToastSprite.x = toasterSprite.x + (toasterSprite.collisionWidth * toasterSprite.scale) / 2 - (toasterSprite.currentToastSprite.collisionWidth * toasterSprite.currentToastSprite.scale) / 2;
             toasterSprite.currentToastSprite.y = toasterSprite.y - 10;
             const currentChargeDuration = performance.now() - toasterSprite.toastChargeStartTime;
@@ -263,6 +264,7 @@ export function updatePlayer2ToasterMovement(keys) {
             console.log(`P2 Toaster released toast, charge: ${chargeDuration}, level: ${currentChargeLevel}`);
         }
         if (toasterSprite.isChargingToast && toasterSprite.currentToastSprite) {
+            toasterSprite.toastCooldown = 60;
             toasterSprite.currentToastSprite.x = toasterSprite.x + (toasterSprite.collisionWidth * toasterSprite.scale) / 2 - (toasterSprite.currentToastSprite.collisionWidth * toasterSprite.currentToastSprite.scale) / 2;
             toasterSprite.currentToastSprite.y = toasterSprite.y - 10;
             const currentChargeDuration = performance.now() - toasterSprite.toastChargeStartTime;
@@ -332,16 +334,16 @@ function sleep(ms) {
  */
 async function jump(toasterSprite) {
     toasterSprite.jumpActive = true;
-    const totalFrames = 20;
+    const totalFrames = 40;
     const jumpHeight = 60;
-    const frameDelay = 16;
+    const frameDelay = 8;
 
     for (let i = 0; i < totalFrames; i++) {
         toasterSprite.y -= jumpHeight / totalFrames;
         toasterSprite.y = Math.max(0, toasterSprite.y);
         await sleep(frameDelay);
     }
-    for (let i = 0; i < totalFrames && toasterSprite.y < GROUND_Y; i++) {
+    for (let i = 0; i < totalFrames || toasterSprite.y < GROUND_Y; i++) {
         toasterSprite.y += (jumpHeight / totalFrames) * 1.18;
         toasterSprite.y = Math.min(GROUND_Y, toasterSprite.y);
         await sleep(frameDelay);
@@ -417,7 +419,7 @@ export function shootToast(toastSprite, chargeLevel, caster) {
 
     toastSprite.vx = launchVx;
     toastSprite.vy = launchVy;
-    toastSprite.lifeTime = 180; // Toast exists for 3 seconds (60 frames/sec * 3) or until collision
+    toastSprite.lifeTime = 60; // Toast exists for 3 seconds (60 frames/sec * 3) or until collision
     toastSprite.lifeRemaining = toastSprite.lifeTime;
     console.log(`Shot toast with charge level ${chargeLevel}. Speed: (${toastSprite.vx}, ${toastSprite.vy})`);
 }
