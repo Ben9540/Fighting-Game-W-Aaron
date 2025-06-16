@@ -660,4 +660,4 @@ document.getElementById('buttonStart').addEventListener('click', () => {
     document.getElementById('charSelect').style.display = 'none';
     document.getElementById('gameCanvas').style.display = 'block';
     initializeGameCharacters();
-});
+});     
