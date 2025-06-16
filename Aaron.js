@@ -164,6 +164,10 @@ export function updatePlayer1ToastCooldown() {
     if (toasterSprite && toasterSprite.toastCooldown > 0) {
         toasterSprite.toastCooldown--;
     }
+    if (toasterSprite.isBlocking && toasterSprite.currentBlock) {
+        toasterSprite.currentBlock.x = toasterSprite.x;
+        toasterSprite.currentBlock.y = toasterSprite.y;
+    }
 }
 
 
@@ -317,6 +321,10 @@ export function updatePlayer2ToastCooldown() {
     if (toasterSprite && toasterSprite.toastCooldown > 0) {
         toasterSprite.toastCooldown--;
     }
+    if (toasterSprite.isBlocking && toasterSprite.currentBlock) {
+        toasterSprite.currentBlock.x = toasterSprite.x;
+        toasterSprite.currentBlock.y = toasterSprite.y;
+    }
 }
 
 // ===============================
@@ -443,8 +451,8 @@ function createBlock(toasterSprite) {
 
     const block = new GameSprite(
         blockImage,
-        toasterSprite.x + (toasterSprite.collisionWidth * toasterSprite.scale) / 2 - (8 * toasterSprite.scale) / 2,
-        toasterSprite.y + (toasterSprite.collisionHeight * toasterSprite.scale) / 2 - (8 * toasterSprite.scale) / 2,
+        toasterSprite.x,
+        toasterSprite.y,
         8, 8,
         8, 8,
         5,
