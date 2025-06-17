@@ -200,8 +200,17 @@
 }
 
 #help{
-    width: 100%;
     height: 100%;
+    width: auto;
+    aspect-ratio: 1 / 1;
     position: absolute;
     display: none;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+    display: none;
+     /* Make pixel art sharp when scaled */
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
