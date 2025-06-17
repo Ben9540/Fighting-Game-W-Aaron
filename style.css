@@ -231,9 +231,13 @@
 #backButton{
     z-index: 10001;
     margin-bottom: 80px;
+<<<<<<< Updated upstream
     margin-right: 30px;
     margin-left: 20px;
+=======
+>>>>>>> Stashed changes
     color:white;
     background-color: transparent;
     font-size: 30px;
+    left: 0px;
 }

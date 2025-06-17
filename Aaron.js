@@ -442,6 +442,14 @@ function createBlock(toasterSprite) {
     // Determine block image based on player tag for different colors
     if (toasterSprite.tag === 'player2-toaster') {
         blockImage = imageAssets.blockp2;
+        blockImage.animations = {
+            'spin': { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 1, end: 9, speed: IDLE_ANIMATION_SPEED, loop: true }
+        };
+    }
+    else{
+        blockImage.animations = {
+            'spin': { framesPerRow: TOASTER_COMMON_FRAMES_PER_ROW, start: 1, end: 9, speed: IDLE_ANIMATION_SPEED, loop: true }
+        };
     }
     // For NPC toaster if applicable, might have a default or specific block image
     // else if (toasterSprite.tag === 'toaster-npc') {
