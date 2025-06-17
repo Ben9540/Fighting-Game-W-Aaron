@@ -615,6 +615,19 @@ document.getElementById('startButton').addEventListener('click', () => {
     }
 });
 
+document.getElementById('helpButton').addEventListener('click', () => {
+    document.getElementById('help').style.display = 'flex';
+    document.getElementById('mainMenu').style.display = 'none';
+    if (!window.gameAssetsLoaded) {
+        loadAllImages(() => {
+            window.gameAssetsLoaded = true;
+            startGameAfterAssetsLoaded();
+        });
+    } else {
+        startGameAfterAssetsLoaded();
+    }
+});
+
 // Player 1 character select
 document.getElementById('char1p1').addEventListener('click', () => {
     if (!player1HasSelected || player1SelectedCharType == 'toaster') {
