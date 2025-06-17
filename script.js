@@ -185,6 +185,9 @@ export class GameSprite {
         if (this.health <= 0) {
             this.health = 0;
             this.shouldRemove = true;
+            document.getElementById("gameCanvas").style.display = 'none';
+            document.getElementById("mainMenu").style.display = 'flex';
+            alert("Player 1 won")
         }
     }
     setAnimation(state) {
