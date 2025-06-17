@@ -616,16 +616,13 @@ document.getElementById('startButton').addEventListener('click', () => {
 });
 
 document.getElementById('helpButton').addEventListener('click', () => {
-    document.getElementById('help').style.display = 'flex';
+    document.getElementById('helpMenu').style.display = 'flex';
     document.getElementById('mainMenu').style.display = 'none';
-    if (!window.gameAssetsLoaded) {
-        loadAllImages(() => {
-            window.gameAssetsLoaded = true;
-            startGameAfterAssetsLoaded();
-        });
-    } else {
-        startGameAfterAssetsLoaded();
-    }
+});
+
+document.getElementById('backButton').addEventListener('click', () => {
+    document.getElementById('helpMenu').style.display = 'none';
+    document.getElementById('mainMenu').style.display = 'flex';
 });
 
 // Player 1 character select
