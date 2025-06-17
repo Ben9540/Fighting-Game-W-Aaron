@@ -474,7 +474,7 @@ function gameLoop() {
                 if (target.takeDamage) {
                     attacker.hasDealtDamageThisAttack = true;
                     let damage = attacker.tag.includes('player1') ? BUTTERFLY_HIT_DAMAGE_P1 : BUTTERFLY_HIT_DAMAGE;
-                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0.75;
+                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0.25;
                     target.takeDamage(damage);
                 }
             }
@@ -486,7 +486,7 @@ function gameLoop() {
                 if (target.takeDamage) {
                     attacker.hasDealtDamageThisAttack2 = true;
                     let damage = attacker.tag.includes('player1') ? TOASTER_HIT_DAMAGE_P1 : TOASTER_HIT_DAMAGE;
-                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0.75;
+                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0.25;
                     target.takeDamage(damage);
                 }
             }
@@ -503,7 +503,7 @@ function gameLoop() {
             targets.forEach(target => {
                 if (checkCollision(projectile, target)) {
                     let damage = 5;
-                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0.75;
+                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0;
                     target.takeDamage(damage);
                     const PUSH_FORCE_MULTIPLIER = 1.5;
                     target.vx += projectile.vx * PUSH_FORCE_MULTIPLIER;
@@ -520,7 +520,7 @@ function gameLoop() {
                     let damage = 10;
                     if (projectile.chargeLevel === 2) damage = 20;
                     if (projectile.chargeLevel === 3) damage = 30;
-                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0.75;
+                    if (target.tag.includes('toaster') && target.isBlocking) damage *= 0;
                     target.takeDamage(damage);
                     removeSprite(projectile);
                 }
