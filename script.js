@@ -187,7 +187,19 @@ export class GameSprite {
             this.shouldRemove = true;
             document.getElementById("gameCanvas").style.display = 'none';
             document.getElementById("mainMenu").style.display = 'flex';
-            alert("Player 1 won")
+            if(ButterflyP1.health <= 0){
+                alert("Player 2 won")
+            }
+            if(ToasterP1.health <= 0){
+                alert("Player 2 won")
+            }
+            if(Butterfly.health <= 0){
+                alert("Player 1 won")
+            }
+            if(IdleToaster.health <= 0){
+                alert("Player 1 won")
+            }
+            location.reload();
         }
     }
     setAnimation(state) {
